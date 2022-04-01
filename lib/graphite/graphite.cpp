@@ -13,9 +13,14 @@ void setupWiFi()
 
   static uint8_t cnt = 0;
 
-  #ifndef ESP8266
-    WiFi.setHostname(HOSTNAME);
-  #endif
+#ifndef ESP8266
+  WiFi.setHostname(HOSTNAME);
+#endif
+
+  // Disable power saving on WiFi to improve responsiveness
+  // (https://github.com/espressif/arduino-esp32/issues/1484)
+  WiFi.setSleep(false);
+
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_KEY);
 
@@ -34,7 +39,14 @@ void setupWiFi()
     waiter += ".";
 
     if (cnt > 100)
+    {
+      display.clear();
+      display.drawStringMaxWidth(0, 0, 128, "Error connecting to WiFi! Restarting...");
+      display.display();
+      Serial.println("Error connecting to WiFi");
+      delay(1000);
       ESP.restart();
+    }
   }
 
   if (!MDNS.begin(MDNS_HOSTNAME))
