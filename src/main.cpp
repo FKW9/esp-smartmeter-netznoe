@@ -30,6 +30,10 @@ void setup()
     Serial2.setRxBufferSize(RECEIVE_BUFFER_SIZE);
     Serial2.setTimeout(2);
 
+    #ifdef ESP8266
+        Serial = Serial2;
+    #endif
+
     setupDisplay();
     setupWiFi();
 }

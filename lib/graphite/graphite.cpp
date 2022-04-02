@@ -96,6 +96,7 @@ void submitToGraphite(time_t unix_timestamp, String metrics, float value)
 {
   if (!graphiteClient.connect(GRAPHITE_HOST, GRAPHITE_PORT))
   {
+    Serial.print("Sending data to graphite failed!");
     delay(500);
     return;
   }
