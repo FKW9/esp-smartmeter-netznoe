@@ -1,12 +1,7 @@
 #include <Arduino.h>
 #include <ArduinoOTA.h>
-#ifdef ESP8266
-    #include <ESP8266mDNS.h>
-    #include <ESP8266WiFi.h>
-#else
-    #include <ESPmDNS.h>
-    #include <WiFi.h>
-#endif
+#include <ESPmDNS.h>
+#include <WiFi.h>
 
 #define GRAPHITE_ACTIVE_POWER_PLUS 		"smartmeter.momentanleistung.plus"
 #define GRAPHITE_ACTIVE_POWER_MINUS 	"smartmeter.momentanleistung.minus"

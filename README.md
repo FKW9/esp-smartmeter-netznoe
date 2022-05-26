@@ -13,7 +13,7 @@ This is a modified version which only supports the Kaifa MA309M Smartmeter from 
 
 ## Requirements
 - [M-Bus to Serial Converter](https://www.mikroe.com/m-bus-slave-click), or similar
-- ESP32 or ESP8266 compatible boards
+- ESP32 or similar boards
 - Server which runs Graphite
 
 ## Used Hardware

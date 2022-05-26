@@ -6,10 +6,6 @@
 #include "../lib/display/display.h"
 #include "../config.h"
 
-#ifdef ESP8266
-    HardwareSerial Serial2 = Serial;
-#endif
-
 uint32_t last_read = 0;                      // Timestamp when data was last read
 uint16_t receive_buffer_index = 0;           // Current position in the receive buffer
 uint8_t receive_buffer[RECEIVE_BUFFER_SIZE]; // Stores the received data
@@ -21,18 +17,12 @@ uint16_t swap_uint16(uint16_t val);
 
 void setup()
 {
-    #ifndef ESP8266
-        Serial.begin(9600); // Debug port
-    #endif
+    Serial.begin(9600); // Debug port
 
     // MBus input from MBus Slave Click
     Serial2.begin(2400, SERIAL_8E1);
     Serial2.setRxBufferSize(RECEIVE_BUFFER_SIZE);
     Serial2.setTimeout(2);
-
-    #ifdef ESP8266
-        Serial = Serial2;
-    #endif
 
     setupDisplay();
     setupWiFi();

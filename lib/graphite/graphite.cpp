@@ -13,9 +13,7 @@ void setupWiFi()
 
   static uint8_t cnt = 0;
 
-#ifndef ESP8266
   WiFi.setHostname(HOSTNAME);
-#endif
 
   // Disable power saving on WiFi to improve responsiveness
   // (https://github.com/espressif/arduino-esp32/issues/1484)
