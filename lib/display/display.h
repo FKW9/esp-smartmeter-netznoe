@@ -1,7 +1,6 @@
-#include <Wire.h>
-#include "SSD1306Wire.h"
+#include <TFT_eSPI.h> // Graphics and font library for ST7735 driver chip
+#include <SPI.h>
 
-extern SSD1306Wire display;
+extern TFT_eSPI tft = TFT_eSPI();  // Invoke library, pins defined in User_Setup.h
 
 void setupDisplay();
-void updateTimestamp(char *timestamp);
