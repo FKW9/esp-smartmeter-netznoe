@@ -22,36 +22,31 @@ void setupWiFi()
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_KEY);
 
-  display.clear();
-  display.drawStringMaxWidth(0, 0, 128, "Connecting to " + String(WIFI_SSID));
-  display.display();
+  tft.print("Connecting to ");
+  tft.println(WIFI_SSID);
 
-  String waiter = ".";
   while (WiFi.status() != WL_CONNECTED)
   {
-    display.drawStringMaxWidth(0, 20, 128, waiter);
-    display.display();
+    tft.print(".");
 
     delay(100);
     cnt++;
-    waiter += ".";
 
     if (cnt > 100)
     {
-      display.clear();
-      display.drawStringMaxWidth(0, 0, 128, "Error connecting to WiFi! Restarting...");
-      display.display();
+      tft.println();
+      tft.println("Error connecting to WiFi! Restarting...");
       Serial.println("Error connecting to WiFi");
       delay(1000);
       ESP.restart();
     }
   }
+  tft.println();
 
   if (!MDNS.begin(MDNS_HOSTNAME))
   {
-    display.clear();
-    display.drawStringMaxWidth(0, 0, 128, "Starting mDNS failed! Restarting...");
-    display.display();
+    tft.println();
+    tft.println("Starting mDNS failed! Restarting...");
     Serial.println("Error starting mDNS");
     delay(1000);
     ESP.restart();
@@ -61,11 +56,9 @@ void setupWiFi()
   ArduinoOTA.setPassword(OTA_AUTH);
   ArduinoOTA.begin();
 
-  display.clear();
-  display.drawString(0, 0, "WiFi connected!");
-  display.drawString(0, 10, "OTA ready: " + WiFi.localIP().toString());
-  display.setTextAlignment(TEXT_ALIGN_RIGHT);
-  display.display();
+  tft.println("WiFi connected!");
+  tft.printf("Signal strength: %ddBm\r\n", WiFi.RSSI());
+  tft.println("OTA ready: " + WiFi.localIP().toString());
 }
 
 /**
@@ -99,73 +92,77 @@ void submitToGraphite(time_t unix_timestamp, String metrics, float value)
     return;
   }
 
-  String payload = metrics + " " + value + " " + unix_timestamp + "\n";
+  #ifdef DEBUG
+    String payload = metrics + " " + value + " -1\n";
+  #else
+    String payload = metrics + " " + value + " " + unix_timestamp + "\n";
+  #endif
 
   graphiteClient.print(payload);
   graphiteClient.stop();
 
-  char formatted_value[32];
+  // char formatted_value[32];
 
-  // format float for displaying
-  if (metrics == GRAPHITE_ACTIVE_ENERGY_PLUS)
-  {
-    sprintf(formatted_value, "%.0fkWh", value / 1000);
-    display.drawString(125, 52, formatted_value);
-  }
-  else if (metrics == GRAPHITE_POWER_FACTOR)
-  {
-    sprintf(formatted_value, "%1.3f", value);
-    display.drawString(125, 42, formatted_value);
-  }
-  else if (metrics == GRAPHITE_ACTIVE_POWER_PLUS)
-  {
-    sprintf(formatted_value, "%.0fW", value);
-    display.drawString(125, 32, formatted_value);
-  }
-  else if (metrics == GRAPHITE_CURRENT_L1)
-  {
-    if (value < 1)
-      sprintf(formatted_value, "%.2f", value);
-    if (value >= 1)
-      sprintf(formatted_value, "%.1f", value);
-    if (value >= 10)
-      sprintf(formatted_value, "%.0f", value);
-    display.drawString(33, 51, formatted_value);
-  }
-  else if (metrics == GRAPHITE_CURRENT_L2)
-  {
-    if (value < 1)
-      sprintf(formatted_value, "%.2f", value);
-    if (value >= 1)
-      sprintf(formatted_value, "%.1f", value);
-    if (value >= 10)
-      sprintf(formatted_value, "%.0f", value);
-    display.drawString(55, 51, formatted_value);
-  }
-  else if (metrics == GRAPHITE_CURRENT_L3)
-  {
-    if (value < 1)
-      sprintf(formatted_value, "%.2f", value);
-    if (value >= 1)
-      sprintf(formatted_value, "%.1f", value);
-    if (value >= 10)
-      sprintf(formatted_value, "%.0f", value);
-    display.drawString(77, 51, formatted_value);
-  }
-  else if (metrics == GRAPHITE_VOLTAGE_L1)
-  {
-    sprintf(formatted_value, "%.0f", value);
-    display.drawString(33, 42, formatted_value);
-  }
-  else if (metrics == GRAPHITE_VOLTAGE_L2)
-  {
-    sprintf(formatted_value, "%.0f", value);
-    display.drawString(55, 42, formatted_value);
-  }
-  else if (metrics == GRAPHITE_VOLTAGE_L3)
-  {
-    sprintf(formatted_value, "%.0f", value);
-    display.drawString(77, 42, formatted_value);
-  }
-  display.display();
+  // // format float for displaying
+  // if (metrics == GRAPHITE_ACTIVE_ENERGY_PLUS)
+  // {
+  //   sprintf(formatted_value, "%.0fkWh", value / 1000);
+  //   display.drawString(125, 52, formatted_value);
+  // }
+  // else if (metrics == GRAPHITE_POWER_FACTOR)
+  // {
+  //   sprintf(formatted_value, "%1.3f", value);
+  //   display.drawString(125, 42, formatted_value);
+  // }
+  // else if (metrics == GRAPHITE_ACTIVE_POWER_PLUS)
+  // {
+  //   sprintf(formatted_value, "%.0fW", value);
+  //   display.drawString(125, 32, formatted_value);
+  // }
+  // else if (metrics == GRAPHITE_CURRENT_L1)
+  // {
+  //   if (value < 1)
+  //     sprintf(formatted_value, "%.2f", value);
+  //   if (value >= 1)
+  //     sprintf(formatted_value, "%.1f", value);
+  //   if (value >= 10)
+  //     sprintf(formatted_value, "%.0f", value);
+  //   display.drawString(33, 51, formatted_value);
+  // }
+  // else if (metrics == GRAPHITE_CURRENT_L2)
+  // {
+  //   if (value < 1)
+  //     sprintf(formatted_value, "%.2f", value);
+  //   if (value >= 1)
+  //     sprintf(formatted_value, "%.1f", value);
+  //   if (value >= 10)
+  //     sprintf(formatted_value, "%.0f", value);
+  //   display.drawString(55, 51, formatted_value);
+  // }
+  // else if (metrics == GRAPHITE_CURRENT_L3)
+  // {
+  //   if (value < 1)
+  //     sprintf(formatted_value, "%.2f", value);
+  //   if (value >= 1)
+  //     sprintf(formatted_value, "%.1f", value);
+  //   if (value >= 10)
+  //     sprintf(formatted_value, "%.0f", value);
+  //   display.drawString(77, 51, formatted_value);
+  // }
+  // else if (metrics == GRAPHITE_VOLTAGE_L1)
+  // {
+  //   sprintf(formatted_value, "%.0f", value);
+  //   display.drawString(33, 42, formatted_value);
+  // }
+  // else if (metrics == GRAPHITE_VOLTAGE_L2)
+  // {
+  //   sprintf(formatted_value, "%.0f", value);
+  //   display.drawString(55, 42, formatted_value);
+  // }
+  // else if (metrics == GRAPHITE_VOLTAGE_L3)
+  // {
+  //   sprintf(formatted_value, "%.0f", value);
+  //   display.drawString(77, 42, formatted_value);
+  // }
+  // display.display();
 }

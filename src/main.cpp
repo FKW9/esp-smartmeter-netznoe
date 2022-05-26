@@ -6,6 +6,9 @@
 #include "../lib/display/display.h"
 #include "../config.h"
 
+char base_version[] = "1.1";
+char my_ver[] PROGMEM = __DATE__ " @ " __TIME__;
+
 uint32_t last_read = 0;                      // Timestamp when data was last read
 uint16_t receive_buffer_index = 0;           // Current position in the receive buffer
 uint8_t receive_buffer[RECEIVE_BUFFER_SIZE]; // Stores the received data
@@ -14,19 +17,23 @@ mbedtls_gcm_context aes;
 
 uint32_t swap_uint32(uint32_t val);
 uint16_t swap_uint16(uint16_t val);
+void serial_dump();
 
 void setup()
 {
-    Serial.begin(9600); // Debug port
+    setupDisplay();
+
+    // Debug port
+    Serial.begin(115200);
 
     // MBus input from MBus Slave Click
     Serial2.begin(2400, SERIAL_8E1);
     Serial2.setRxBufferSize(RECEIVE_BUFFER_SIZE);
     Serial2.setTimeout(2);
 
-    setupDisplay();
     setupWiFi();
 }
+
 
 void loop()
 {
@@ -148,7 +155,7 @@ void loop()
                     Serial.println(timeStamp);
 
                     // Update Display
-                    updateTimestamp(timeStamp);
+                    // updateTimestamp(timeStamp);
 
                     current_position = 34;
                     data_length = plaintext[current_position + OBIS_LENGTH_OFFSET];
@@ -368,15 +375,73 @@ void loop()
 
         receive_buffer_index = 0;
         Serial.println("Received valid data!");
-
         submitToGraphite(unix_timestamp, GRAPHITE_RSSI, WiFi.RSSI());
+
+        #ifdef DEBUG
+            static uint16_t valid_packet_cnt = 0;
+            valid_packet_cnt++;
+            int16_t x = tft.getCursorX();
+            int16_t y = tft.getCursorY();
+            tft.setTextColor(TFT_BLUE, TFT_WHITE, true);
+            tft.printf("Received valid data! (%d)", valid_packet_cnt);
+            tft.setTextColor(TFT_WHITE, TFT_BLACK);
+            tft.setCursor(x, y);
+        #endif
     }
 }
+
+
+void serial_dump() {
+
+    uint32_t sketch_size = ESP.getSketchSize();
+    uint32_t sketch_space = ESP.getFreeSketchSpace();
+    String sketch_MD5 = ESP.getSketchMD5();
+
+    // tft.fillScreen(TFT_BLACK);
+    // tft.setCursor(0, 0);
+    Serial.printf("Name: %s\r\n", HOSTNAME);
+    // if (haveTime) {
+    //     Serial.print("Time: ");
+    //     printLocalTime(true);
+    // }
+    Serial.printf("Firmware: %s (base: %s)\r\n", my_ver, base_version);
+    float sketchPct = 100 * sketch_size / sketch_space;
+    Serial.printf("Sketch Size: %i (total: %i, %.1f%% used)\r\n", sketch_size, sketch_space, sketchPct);
+    Serial.printf("ESP sdk: %s\r\n", ESP.getSdkVersion());
+    Serial.printf("WiFi SSID: %s\r\n", WIFI_SSID);
+    Serial.println("WiFi IP address: " + WiFi.localIP().toString());
+
+    int64_t sec = esp_timer_get_time() / 1000000;
+    int64_t up_days = int64_t(floor(sec/86400));
+    int up_hours = int64_t(floor(sec/3600)) % 24;
+    int up_min = int64_t(floor(sec/60)) % 60;
+    int up_sec = sec % 60;
+
+    Serial.printf("System up: %" PRId64 ":%02i:%02i:%02i (d:h:m:s)\r\n", up_days, up_hours, up_min, up_sec);
+    Serial.printf("CPU Freq: %i MHz\r\n", ESP.getCpuFreqMHz());
+    Serial.printf("Heap: %i, free: %i, min free: %i, max block: %i\r\n", ESP.getHeapSize(), ESP.getFreeHeap(), ESP.getMinFreeHeap(), ESP.getMaxAllocHeap());
+    if(psramFound()) {
+        Serial.printf("Psram: %i, free: %i, min free: %i, max block: %i\r\n", ESP.getPsramSize(), ESP.getFreePsram(), ESP.getMinFreePsram(), ESP.getMaxAllocPsram());
+    } else {
+        Serial.printf("Psram: Not found.\r\n");
+    }
+    // Filesystems
+    // if (filesystem && (SPIFFS.totalBytes() > 0)) {
+    //     Serial.printf("Spiffs: %i, used: %i\r\n", SPIFFS.totalBytes(), SPIFFS.usedBytes());
+    // } else {
+    //     Serial.printf("Spiffs: No filesystem found, please check your board configuration.\r\n");
+    //     Serial.printf("- Saving and restoring camera settings will not function without this.\r\n");
+    // }
+    Serial.println();
+    return;
+}
+
 
 uint16_t swap_uint16(uint16_t val)
 {
     return (val << 8) | (val >> 8);
 }
+
 
 uint32_t swap_uint32(uint32_t val)
 {
