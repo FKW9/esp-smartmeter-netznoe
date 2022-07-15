@@ -9,5 +9,6 @@ python
 .vscode/extensions.json
 .vscode/extensions.json
 .vscode/extensions.json
-hardware/*.pdsbak
-hardware/*.workspace
+*.pdsbak
+*.workspace
+Project Backups
