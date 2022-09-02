@@ -2,19 +2,26 @@
 #include <mbedtls/gcm.h>
 #include "dlms.h"
 #include "obis.h"
-#include "../lib/graphite/graphite.h"
-#include "../lib/display/display.h"
+#include "graphite.h"
+#include "display.h"
+#include "hte501.h"
 #include "../config.h"
 
-char base_version[] = "1.1";
+// General variables
+char base_version[] = "2.0";
 char my_ver[] PROGMEM = __DATE__ " @ " __TIME__;
 
+// Variables for DLMS decoding
 uint32_t last_read = 0;                      // Timestamp when data was last read
 uint16_t receive_buffer_index = 0;           // Current position in the receive buffer
 uint8_t receive_buffer[RECEIVE_BUFFER_SIZE]; // Stores the received data
-
 mbedtls_gcm_context aes;
 
+// Variables for RHT sensor
+float temperature = 0, humidity = 0;
+uint8_t ready = 0;
+
+// Function prototypes
 uint32_t swap_uint32(uint32_t val);
 uint16_t swap_uint16(uint16_t val);
 void serial_dump();
@@ -22,9 +29,12 @@ void serial_dump();
 void setup()
 {
     setupDisplay();
+    setupSensor();
+    startPeriodicMeasurement();
 
     // Debug port
     Serial.begin(115200);
+    Serial.println("Booting...");
 
     // MBus input from MBus Slave Click
     Serial2.begin(2400, SERIAL_8E1);
@@ -120,11 +130,7 @@ void loop()
                     memcpy(&dateTime[0], &plaintext[current_position + 2], data_length);
 
                     uint16_t year;
-                    uint8_t month;
-                    uint8_t day;
-                    uint8_t hour;
-                    uint8_t minute;
-                    uint8_t second;
+                    uint8_t month, day, hour, minute, second;
 
                     year = (plaintext[current_position + 2] << 8) + plaintext[current_position + 3];
                     month = plaintext[current_position + 4];
@@ -375,7 +381,28 @@ void loop()
 
         receive_buffer_index = 0;
         Serial.println("Received valid data!");
+
+        // After DLMS Decoding is done, do some other stuff
         submitToGraphite(unix_timestamp, GRAPHITE_RSSI, WiFi.RSSI());
+
+
+        // Read RHT sensor
+        if (newMeasurementReady(ready)){
+            if (ready){
+                if (fetchPeriodicTemperatureHumidity(temperature, humidity))
+                {
+                    submitToGraphite(unix_timestamp, GRAPHITE_RH, humidity);
+                    submitToGraphite(unix_timestamp, GRAPHITE_T, temperature);
+
+                    #ifdef DEBUG
+                        tft.setCursor(0, 80);
+                        tft.print(temperature);
+                        tft.print(" - ");
+                        tft.println(humidity);
+                    #endif
+                }
+            }
+        }
 
         #ifdef DEBUG
             static uint16_t valid_packet_cnt = 0;

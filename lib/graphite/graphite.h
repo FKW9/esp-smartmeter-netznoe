@@ -16,6 +16,8 @@
     #define GRAPHITE_CURRENT_L3 			"test.smartmeter.strom.L3"
     #define GRAPHITE_POWER_FACTOR 			"test.smartmeter.cosphi"
     #define GRAPHITE_RSSI 					"test.smartmeter.data.rssi"
+    #define GRAPHITE_T 					    "test.smartmeter.data.pcb_t"
+    #define GRAPHITE_RH 					"test.smartmeter.data.pcb_rh"
 #else
     #define GRAPHITE_ACTIVE_POWER_PLUS 		"smartmeter.momentanleistung.plus"
     #define GRAPHITE_ACTIVE_POWER_MINUS 	"smartmeter.momentanleistung.minus"
@@ -28,7 +30,9 @@
     #define GRAPHITE_CURRENT_L2 			"smartmeter.strom.L2"
     #define GRAPHITE_CURRENT_L3 			"smartmeter.strom.L3"
     #define GRAPHITE_POWER_FACTOR 			"smartmeter.cosphi"
-    #define GRAPHITE_RSSI 					"test.data.rssi"
+    #define GRAPHITE_RSSI 					"smartmeter.data.rssi"
+    #define GRAPHITE_T 					    "smartmeter.data.pcb_t"
+    #define GRAPHITE_RH 					"smartmeter.data.pcb_rh"
 #endif
 
 void setupWiFi();
