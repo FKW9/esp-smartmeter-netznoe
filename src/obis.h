@@ -77,3 +77,19 @@ static const uint8_t OBIS_ACTIVE_ENERGY_PLUS[] {
 static const uint8_t OBIS_ACTIVE_ENERGY_MINUS[] {
     0x02, 0x08 // 1.0.2.8.0.255
 };
+
+struct obisData {
+    char timestamp_str[21];
+    time_t timestamp_unix;
+    float voltage_l1;
+    float voltage_l2;
+    float voltage_l3;
+    float current_l1;
+    float current_l2;
+    float current_l3;
+    float cos_phi;
+    float power_plus;
+    float power_minus;
+    float energy_plus;
+    float energy_minus;
+};
