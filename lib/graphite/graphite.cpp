@@ -56,9 +56,8 @@ void setupWiFi()
   ArduinoOTA.setPassword(OTA_AUTH);
   ArduinoOTA.begin();
 
-  tft.println("WiFi connected!");
-  tft.printf("Signal strength: %ddBm\r\n", WiFi.RSSI());
-  tft.println("OTA ready: " + WiFi.localIP().toString());
+  tft.fillScreen(TFT_BLACK);
+  displayWiFiInfo();
 }
 
 /**
