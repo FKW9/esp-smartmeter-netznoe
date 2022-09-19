@@ -295,6 +295,7 @@ void loop()
                 }
                 break;
 
+            case DATA_LONG:
             case DATA_LONG_UNSIGNED:
                 obis_data_length = 2;
 
