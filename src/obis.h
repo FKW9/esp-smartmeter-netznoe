@@ -8,7 +8,6 @@
 // Data types as per specification
 #define DATA_NULL                   0x00
 #define DATA_OCTET_STRING           0x09
-#define DATA_LONG                   0x10
 #define DATA_LONG_UNSIGNED          0x12
 #define DATA_LONG_DOUBLE_UNSIGNED   0x06
 
