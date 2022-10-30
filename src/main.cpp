@@ -143,7 +143,7 @@ void loop()
                     struct tm tm;
                     if (strptime(timeStamp, "%d.%m.%Y %H:%M:%S", &tm) != NULL)
                     {
-                        unix_timestamp = mktime(&tm) - 7200;
+                        unix_timestamp = mktime(&tm) - 3600;
                         Serial.print("Unix Time: ");
                         Serial.println(unix_timestamp);
                     }
