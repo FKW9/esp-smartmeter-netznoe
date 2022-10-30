@@ -297,7 +297,6 @@ void loop()
                 }
                 break;
 
-            case DATA_LONG:
             case DATA_LONG_UNSIGNED:
                 obis_data_length = 2;
 
@@ -438,8 +437,6 @@ void serial_dump() {
     uint32_t sketch_space = ESP.getFreeSketchSpace();
     String sketch_MD5 = ESP.getSketchMD5();
 
-    // tft.fillScreen(TFT_BLACK);
-    // tft.setCursor(0, 0);
     Serial.printf("Name: %s\r\n", HOSTNAME);
     // if (haveTime) {
     //     Serial.print("Time: ");
