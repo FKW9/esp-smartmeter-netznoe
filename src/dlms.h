@@ -1,3 +1,6 @@
+#ifndef DLMS_H_
+#define DLMS_H_
+
 static const uint8_t KEY_LENGTH = 16;
 
 #define DLMS_HEADER1_OFFSET 0 // Start of first DLMS header
@@ -14,3 +17,5 @@ static const uint8_t KEY_LENGTH = 16;
 
 #define READ_TIMEOUT 1000
 #define RECEIVE_BUFFER_SIZE 1024
+
+#endif

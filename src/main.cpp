@@ -2,15 +2,16 @@
 #include <mbedtls/gcm.h>
 #include "dlms.h"
 #include "obis.h"
-#include "graphite.h"
 #include "display.h"
 #include "hte501.h"
 #include "sdcard.h"
-#include "../config.h"
+#include "ESPLogger.h"
+#include "setup.h"
+#include "../key.h"
 
-// General variables
-char base_version[] = "2.0";
-char my_ver[] PROGMEM = __DATE__ " @ " __TIME__;
+#ifdef USE_GRAPHITE
+    #include "graphite.h"
+#endif
 
 // Variables for DLMS decoding
 uint32_t last_read = 0;                      // Timestamp when data was last read
@@ -27,15 +28,20 @@ uint32_t swap_uint32(uint32_t val);
 uint16_t swap_uint16(uint16_t val);
 void serial_dump();
 
+// Variables for Logging
+#ifdef SD_CARD_LOGGING
+uint8_t sd_available = 0;
+#endif
+
+// SETUP
 void setup()
 {
-    setupDisplay();
+    displaySetup();
     setupSensor();
     startPeriodicMeasurement();
 
     // Debug port
     Serial.begin(115200);
-    Serial.println("Booting...");
 
     // MBus input from MBus Slave Click
     Serial2.begin(2400, SERIAL_8E1);
@@ -43,16 +49,38 @@ void setup()
     Serial2.setTimeout(2);
 
     setupWiFi();
-    setupSDCard();
+#ifdef SD_CARD_LOGGING
+    sd_available = setupSDCard();
     displaySDCardStatus();
+#endif
+    etft.printf("\nWarte auf Smartmeter Daten...");
+    delay(4000);
 }
 
-
+// MAIN LOOP
 void loop()
 {
     checkWiFiConnection();
+    displayInactiveTimer();
+    displayUpdate();
+
+    if (config_update)
+    {
+        // blocking
+        startConfigAP(true);
+        config_update = false;
+    }
 
     uint32_t current_time = millis();
+
+    if (Serial.available())
+    {
+        char c = Serial.read();
+        if (c == 'd')
+            serial_dump();
+        if (c == 'r')
+            ESP.restart();
+    }
 
     // Read while data is available
     while (Serial2.available())
@@ -111,7 +139,7 @@ void loop()
 
         // Decode data
         uint16_t current_position = DECODER_START_OFFSET;
-        obisData meterData;
+        meterData meter_data;
 
         do
         {
@@ -142,25 +170,30 @@ void loop()
                     minute = plaintext[current_position + 8];
                     second = plaintext[current_position + 9];
 
-                    sprintf(meterData.timestamp_str, "%02u.%02u.%04u %02u:%02u:%02u", day, month, year, hour, minute, second);
+                    sprintf(meter_data.timestamp_str, "%02u.%02u.%04u %02u:%02u:%02u", day, month, year, hour, minute, second);
 
+                    meter_data.timestamp_unix = -1;
+                    // COMMENTED OUT BECAUSE I DONT WANT THE PAIN CONVERSION WITH TIMEZONZES
+                    // JUST USE -1 TO USE CURRENT TIME OF GRAPHITE HOST
+                    //
                     // convert to unix timestamp for graphite
-                    struct tm tm;
-                    if (strptime(meterData.timestamp_str, "%d.%m.%Y %H:%M:%S", &tm) != NULL)
-                    {
-                        meterData.timestamp_unix = mktime(&tm) - 7200;
-                        Serial.print("Unix Time: ");
-                        Serial.println(meterData.timestamp_unix);
-                    }
-                    else
-                    {
-                        Serial.println("Invalid Timestamp");
-                        receive_buffer_index = 0;
-                        return;
-                    }
+                    // struct tm tm;
+                    // if (strptime(meter_data.timestamp_str, "%d.%m.%Y %H:%M:%S", &tm) != NULL)
+                    // {
+                    //// TODO: detect time zone summer time/winter time
+                    //     meter_data.timestamp_unix = mktime(&tm) - 7200;
+                    //     Serial.print("Unix Time: ");
+                    //     Serial.println(meter_data.timestamp_unix);
+                    // }
+                    // else
+                    // {
+                    //     Serial.println("Invalid Timestamp");
+                    //     receive_buffer_index = 0;
+                    //     return;
+                    // }
 
                     Serial.print("Timestamp: ");
-                    Serial.println(meterData.timestamp_str);
+                    Serial.println(meter_data.timestamp_str);
 
                     current_position = 34;
                     data_length = plaintext[current_position + OBIS_LENGTH_OFFSET];
@@ -272,32 +305,31 @@ void loop()
                 switch (code_type)
                 {
                 case TYPE_ACTIVE_POWER_PLUS:
-                    meterData.power_plus = float_value;
+                    meter_data.power_plus = float_value;
                     Serial.print("ActivePowerPlus ");
                     Serial.println(float_value);
                     break;
 
                 case TYPE_ACTIVE_POWER_MINUS:
-                    meterData.power_minus = float_value;
+                    meter_data.power_minus = float_value;
                     Serial.print("ActivePowerMinus ");
                     Serial.println(float_value);
                     break;
 
                 case TYPE_ACTIVE_ENERGY_PLUS:
-                    meterData.energy_plus = float_value;
+                    meter_data.energy_plus = float_value;
                     Serial.print("ActiveEnergyPlus ");
                     Serial.println(float_value);
                     break;
 
                 case TYPE_ACTIVE_ENERGY_MINUS:
-                    meterData.energy_minus = float_value;
+                    meter_data.energy_minus = float_value;
                     Serial.print("ActiveEnergyMinus ");
                     Serial.println(float_value);
                     break;
                 }
                 break;
 
-            case DATA_LONG:
             case DATA_LONG_UNSIGNED:
                 obis_data_length = 2;
 
@@ -316,43 +348,43 @@ void loop()
                 switch (code_type)
                 {
                 case TYPE_VOLTAGE_L1:
-                    meterData.voltage_l1 = float_value;
+                    meter_data.voltage_l1 = float_value;
                     Serial.print("VoltageL1 ");
                     Serial.println(float_value);
                     break;
 
                 case TYPE_VOLTAGE_L2:
-                    meterData.voltage_l2 = float_value;
+                    meter_data.voltage_l2 = float_value;
                     Serial.print("VoltageL2 ");
                     Serial.println(float_value);
                     break;
 
                 case TYPE_VOLTAGE_L3:
-                    meterData.voltage_l3 = float_value;
+                    meter_data.voltage_l3 = float_value;
                     Serial.print("VoltageL3 ");
                     Serial.println(float_value);
                     break;
 
                 case TYPE_CURRENT_L1:
-                    meterData.current_l1 = float_value;
+                    meter_data.current_l1 = float_value;
                     Serial.print("CurrentL1 ");
                     Serial.println(float_value);
                     break;
 
                 case TYPE_CURRENT_L2:
-                    meterData.current_l2 = float_value;
+                    meter_data.current_l2 = float_value;
                     Serial.print("CurrentL2 ");
                     Serial.println(float_value);
                     break;
 
                 case TYPE_CURRENT_L3:
-                    meterData.current_l3 = float_value;
+                    meter_data.current_l3 = float_value;
                     Serial.print("CurrentL3 ");
                     Serial.println(float_value);
                     break;
 
                 case TYPE_POWER_FACTOR:
-                    meterData.cos_phi = float_value;
+                    meter_data.cos_phi = float_value;
                     Serial.print("PowerFactor ");
                     Serial.println(float_value);
                     break;
@@ -382,107 +414,152 @@ void loop()
         receive_buffer_index = 0;
         Serial.println("Received valid data!");
 
-        // send the data
-        submitToGraphite(meterData.timestamp_unix, GRAPHITE_VOLTAGE_L1, meterData.voltage_l1);
-        submitToGraphite(meterData.timestamp_unix, GRAPHITE_VOLTAGE_L2, meterData.voltage_l2);
-        submitToGraphite(meterData.timestamp_unix, GRAPHITE_VOLTAGE_L3, meterData.voltage_l3);
-        submitToGraphite(meterData.timestamp_unix, GRAPHITE_CURRENT_L1, meterData.current_l1);
-        submitToGraphite(meterData.timestamp_unix, GRAPHITE_CURRENT_L2, meterData.current_l2);
-        submitToGraphite(meterData.timestamp_unix, GRAPHITE_CURRENT_L3, meterData.current_l3);
-        submitToGraphite(meterData.timestamp_unix, GRAPHITE_POWER_FACTOR, meterData.cos_phi);
-        submitToGraphite(meterData.timestamp_unix, GRAPHITE_ACTIVE_POWER_PLUS, meterData.power_plus);
-        submitToGraphite(meterData.timestamp_unix, GRAPHITE_ACTIVE_ENERGY_PLUS, meterData.energy_plus);
-        // submitToGraphite(meterData.timestamp_unix, GRAPHITE_ACTIVE_POWER_MINUS, meterData.power_minus);
-        // submitToGraphite(meterData.timestamp_unix, GRAPHITE_ACTIVE_ENERGY_MINUS, meterData.energy_minus);
-        displayMeterData(&meterData);
-
-        // After DLMS decoding is done, send some other stuff
-        submitToGraphite(-1, GRAPHITE_RSSI, WiFi.RSSI());
-        displayRSSI();
-
+        meter_data.rssi = WiFi.RSSI();
         // Read RHT sensor
-        if (newMeasurementReady(rht_ready)){
-            if (rht_ready){
+        if (newMeasurementReady(rht_ready))
+        {
+            if (rht_ready)
+            {
                 if (fetchPeriodicTemperatureHumidity(temperature, humidity))
                 {
-                    submitToGraphite(-1, GRAPHITE_RH, humidity);
-                    submitToGraphite(-1, GRAPHITE_T, temperature);
-
-                    #ifdef DEBUG
-                        tft.setCursor(0, 80);
-                        tft.print(temperature);
-                        tft.print(" - ");
-                        tft.println(humidity);
-                    #endif
+                    meter_data.humidity = humidity;
+                    meter_data.temperature = temperature;
                 }
             }
         }
 
-        #ifdef DEBUG
-            static uint16_t valid_packet_cnt = 0;
-            valid_packet_cnt++;
-            int16_t x = tft.getCursorX();
-            int16_t y = tft.getCursorY();
-            tft.setTextColor(TFT_BLUE, TFT_WHITE, true);
-            tft.printf("Received valid data! (%d)", valid_packet_cnt);
-            tft.setTextColor(TFT_WHITE, TFT_BLACK);
-            tft.setCursor(x, y);
-        #endif
+        // send the data
+#ifdef USE_GRAPHITE
+        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_VOLTAGE_L1, meter_data.voltage_l1);
+        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_VOLTAGE_L2, meter_data.voltage_l2);
+        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_VOLTAGE_L3, meter_data.voltage_l3);
+        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_CURRENT_L1, meter_data.current_l1);
+        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_CURRENT_L2, meter_data.current_l2);
+        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_CURRENT_L3, meter_data.current_l3);
+        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_POWER_FACTOR, meter_data.cos_phi);
+        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_ACTIVE_POWER_PLUS, meter_data.power_plus);
+        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_ACTIVE_POWER_MINUS, meter_data.power_minus);
+        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_ACTIVE_ENERGY_PLUS, meter_data.energy_plus);
+        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_ACTIVE_ENERGY_MINUS, meter_data.energy_minus);
+        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_T, meter_data.temperature);
+        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_RH, meter_data.humidity);
+        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_RSSI, meter_data.rssi);
+#endif
+
+        // update the display
+        displayMeterData(&meter_data);
+
+// log to file
+#ifdef SD_CARD_LOGGING
+        if (sd_available)
+        {
+            // check for free space, if smaller than 100MB, delete old file
+            while ((SD_MMC.totalBytes() - SD_MMC.usedBytes()) < 100e6)
+            {
+                char oldest_file[32];
+                getOldestFile(oldest_file, "/");
+                Serial.print("Less than 100MB left. Deleting File: ");
+                Serial.println(oldest_file);
+                deleteFile(oldest_file);
+            }
+
+            // copy timestamp into file string
+            // creates new file every month
+            char filename[13] = {"/YYYY_MM.CSV"};
+            memcpy(&filename[6], &meter_data.timestamp_str[3], 2);
+            memcpy(&filename[1], &meter_data.timestamp_str[6], 4);
+
+            // init logger
+            ESPLogger logger(filename, SD_MMC);
+            logger.setSizeLimit(80000000); //80MB max size, 1 month is about 60MB
+            logger.setChunkSize(128);
+
+            // write header if file was just created (=empty)
+            if (logger.getSize() < 10)
+            {
+                Serial.println("Writing Header to new file");
+                logger.append("DATUM_ZEIT,U_L1,U_L2,U_L3,I_L1,I_L2,I_L3,COS(PHI),P_ZU,P_AB,E_ZU,E_AB,T,RH,WIFI_RSSI");
+            }
+
+            char record[128];
+            sprintf(record, "%s,%.1f,%.1f,%.1f,%.2f,%.2f,%.2f,%.3f,%.1f,%.1f,%.0f,%.0f,%.2f,%.2f,%d", meter_data.timestamp_str, meter_data.voltage_l1, meter_data.voltage_l2, meter_data.voltage_l3, meter_data.current_l1, meter_data.current_l2, meter_data.current_l3, meter_data.cos_phi, meter_data.power_plus, meter_data.power_minus, meter_data.energy_plus, meter_data.energy_minus, meter_data.temperature, meter_data.humidity, meter_data.rssi);
+            bool success = logger.append(record);
+            if (success)
+            {
+                Serial.println("Record stored on SD Card!");
+            }
+            else
+            {
+                if (logger.isFull())
+                    Serial.println("Record NOT stored! File reached max size!");
+                else
+                    Serial.println("Something went wrong, record NOT stored!");
+            }
+        }
+        else
+        {
+            Serial.println("Data not stored. SD Card not available.");
+        }
+#endif
     }
 }
 
-
-void serial_dump() {
-
+void serial_dump()
+{
     uint32_t sketch_size = ESP.getSketchSize();
     uint32_t sketch_space = ESP.getFreeSketchSpace();
     String sketch_MD5 = ESP.getSketchMD5();
 
-    // tft.fillScreen(TFT_BLACK);
-    // tft.setCursor(0, 0);
     Serial.printf("Name: %s\r\n", HOSTNAME);
-    // if (haveTime) {
-    //     Serial.print("Time: ");
-    //     printLocalTime(true);
-    // }
-    Serial.printf("Firmware: %s (base: %s)\r\n", my_ver, base_version);
     float sketchPct = 100 * sketch_size / sketch_space;
     Serial.printf("Sketch Size: %i (total: %i, %.1f%% used)\r\n", sketch_size, sketch_space, sketchPct);
     Serial.printf("ESP sdk: %s\r\n", ESP.getSdkVersion());
-    Serial.printf("WiFi SSID: %s\r\n", WIFI_SSID);
+    Serial.println("WiFi SSID: " + WiFi.SSID());
     Serial.println("WiFi IP address: " + WiFi.localIP().toString());
 
     int64_t sec = esp_timer_get_time() / 1000000;
-    int64_t up_days = int64_t(floor(sec/86400));
-    int up_hours = int64_t(floor(sec/3600)) % 24;
-    int up_min = int64_t(floor(sec/60)) % 60;
+    int64_t up_days = int64_t(floor(sec / 86400));
+    int up_hours = int64_t(floor(sec / 3600)) % 24;
+    int up_min = int64_t(floor(sec / 60)) % 60;
     int up_sec = sec % 60;
 
     Serial.printf("System up: %" PRId64 ":%02i:%02i:%02i (d:h:m:s)\r\n", up_days, up_hours, up_min, up_sec);
     Serial.printf("CPU Freq: %i MHz\r\n", ESP.getCpuFreqMHz());
     Serial.printf("Heap: %i, free: %i, min free: %i, max block: %i\r\n", ESP.getHeapSize(), ESP.getFreeHeap(), ESP.getMinFreeHeap(), ESP.getMaxAllocHeap());
-    if(psramFound()) {
+    if (psramFound())
+    {
         Serial.printf("Psram: %i, free: %i, min free: %i, max block: %i\r\n", ESP.getPsramSize(), ESP.getFreePsram(), ESP.getMinFreePsram(), ESP.getMaxAllocPsram());
-    } else {
-        Serial.printf("Psram: Not found.\r\n");
     }
-    // Filesystems
-    // if (filesystem && (SPIFFS.totalBytes() > 0)) {
-    //     Serial.printf("Spiffs: %i, used: %i\r\n", SPIFFS.totalBytes(), SPIFFS.usedBytes());
-    // } else {
-    //     Serial.printf("Spiffs: No filesystem found, please check your board configuration.\r\n");
-    //     Serial.printf("- Saving and restoring camera settings will not function without this.\r\n");
-    // }
-    Serial.println();
+    else
+    {
+        Serial.println("Psram: Not found");
+    }
+    if (SPIFFS.begin())
+    {
+        Serial.printf("Spiffs: %i, used: %i\r\n", SPIFFS.totalBytes(), SPIFFS.usedBytes());
+    }
+    else
+    {
+        Serial.println("Spiffs: Not found");
+    }
+    if (sd_available)
+    {
+        uint64_t cardSize = SD_MMC.cardSize() / (1024 * 1024);
+        Serial.printf("Card Size: %lluMB\n", cardSize);
+        Serial.printf("Total space: %lluMB\n", SD_MMC.totalBytes() / (1024 * 1024));
+        Serial.printf("Used space: %lluMB\n", SD_MMC.usedBytes() / (1024 * 1024));
+    }
+    else
+    {
+        Serial.println("SD Card: Not available");
+    }
     return;
 }
-
 
 uint16_t swap_uint16(uint16_t val)
 {
     return (val << 8) | (val >> 8);
 }
-
 
 uint32_t swap_uint32(uint32_t val)
 {

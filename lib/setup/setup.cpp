@@ -1,0 +1,89 @@
+#include "setup.h"
+
+void startConfigAP(bool force)
+{
+    WiFiManager wm;
+    wm.setHostname(HOSTNAME);
+    wm.setClass("invert");
+    wm.setShowStaticFields(true);
+    wm.setShowInfoErase(true);
+    // wm.setShowDnsFields(true);
+
+    if (wm.getWiFiIsSaved() && !force)
+    {
+        etft.println("Verbinde mit: " + wm.getWiFiSSID());
+    }
+    else
+    {
+        etft.print("Bitte mit WiFi \"");
+        etft.setTextColor(TFT_GREEN);
+        etft.print(HOSTNAME);
+        etft.setTextColor(TFT_WHITE);
+        etft.printf("\"\r\nverbinden, um Einstellungen zu \r\naendern!\r\nAdresse: 192.168.4.1\r\n");
+    }
+
+    if (force)
+    {
+        Serial.println("Starting config portal");
+        wm.setConfigPortalTimeout(120);
+        if (!wm.startConfigPortal(HOSTNAME)) {
+            etft.setTextColor(TFT_RED);
+            etft.println("Error connecting or timeout! Restarting...");
+            Serial.println("Failed to connect or hit timeout");
+            delay(3000);
+            ESP.restart();
+        }
+    }
+    else if (!wm.autoConnect(HOSTNAME))
+    {
+        etft.println();
+        etft.setTextColor(TFT_RED);
+        etft.println("Error connecting to WiFi! Restarting...");
+        Serial.println("Error connecting to WiFi");
+        delay(2000);
+        ESP.restart();
+    }
+}
+
+/**
+ * @brief Connect to WiFi, start MDN Service and init OTA
+ */
+void setupWiFi()
+{
+    // Disable power saving on WiFi to improve responsiveness
+    // (https://github.com/espressif/arduino-esp32/issues/1484)
+    WiFi.setSleep(false);
+    WiFi.mode(WIFI_STA);
+
+    startConfigAP();
+
+    if (!MDNS.begin(HOSTNAME))
+    {
+        etft.setTextColor(TFT_RED);
+        etft.println("Starting mDNS failed! Restarting...");
+        Serial.println("Error starting mDNS");
+        delay(2000);
+        ESP.restart();
+    }
+
+    ArduinoOTA.setHostname(HOSTNAME);
+    ArduinoOTA.begin();
+
+    displayWiFiInfo();
+}
+
+/**
+ * @brief Check if still connected, else reconnect.
+ * + OTA handle
+ */
+void checkWiFiConnection()
+{
+    ArduinoOTA.handle();
+    if (WiFi.status() != WL_CONNECTED)
+    {
+        WiFi.disconnect();
+        yield();
+        etft.fillScreen(0x0);
+        setupWiFi();
+    }
+}

@@ -1,20 +1,13 @@
-/*
- * Your Encryption Key
- */
-static const unsigned char KEY[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+// WiFi Hostname
+#define HOSTNAME "Smartmeter"
 
-/*
- * WiFi Settings
- */
-#define HOSTNAME        "ESP-Smartmeter"    // Hostname (only valid for ESP32)
-#define MDNS_HOSTNAME   "smartmeter"        // MDNS Name
-#define WIFI_KEY        "<your key>"        // Your WiFi password
-#define WIFI_SSID       "<your ssid>"       // Your WiFi SSID
-#define OTA_AUTH        "<your key>"        // Password for OTA programming
+// Comment out next line to disable SD Card logging
+#define SD_CARD_LOGGING
 
-/*
- * Graphite Settings
- * For changing the metrics name, go to file "lib/graphite/graphite.h"
- */
-#define GRAPHITE_HOST "<your ip>"    // IP and Port of your Graphite Host
-#define GRAPHITE_PORT 2003           // Port should be standard metric line receiver
+// Comment out next line to disable Graphite logging
+#define USE_GRAPHITE
+
+#ifdef USE_GRAPHITE
+    #define GRAPHITE_HOST "192.168.8.42"    // IP and Port of your Graphite Host
+    #define GRAPHITE_PORT 2003              // Port must be standard metric line receiver
+#endif
