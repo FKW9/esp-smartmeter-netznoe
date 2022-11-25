@@ -8,10 +8,6 @@
 #include "sdcard.h"
 #include "../config.h"
 
-// General variables
-char base_version[] = "2.0";
-char my_ver[] PROGMEM = __DATE__ " @ " __TIME__;
-
 // Variables for DLMS decoding
 uint32_t last_read = 0;                      // Timestamp when data was last read
 uint16_t receive_buffer_index = 0;           // Current position in the receive buffer
@@ -27,6 +23,7 @@ uint32_t swap_uint32(uint32_t val);
 uint16_t swap_uint16(uint16_t val);
 void serial_dump();
 
+// SETUP
 void setup()
 {
     setupDisplay();
@@ -47,7 +44,7 @@ void setup()
     displaySDCardStatus();
 }
 
-
+// MAIN LOOP
 void loop()
 {
     checkWiFiConnection();
@@ -144,20 +141,25 @@ void loop()
 
                     sprintf(meterData.timestamp_str, "%02u.%02u.%04u %02u:%02u:%02u", day, month, year, hour, minute, second);
 
+                    meterData.timestamp_unix = -1;
+                    // COMMENTED OUT BECAUSE I DONT WANT THE PAIN CONVERSION WITH TIMEZONZES
+                    // JUST USE -1 TO USE CURRENT TIME OF GRAPHITE HOST
+                    //
                     // convert to unix timestamp for graphite
-                    struct tm tm;
-                    if (strptime(meterData.timestamp_str, "%d.%m.%Y %H:%M:%S", &tm) != NULL)
-                    {
-                        meterData.timestamp_unix = mktime(&tm) - 7200;
-                        Serial.print("Unix Time: ");
-                        Serial.println(meterData.timestamp_unix);
-                    }
-                    else
-                    {
-                        Serial.println("Invalid Timestamp");
-                        receive_buffer_index = 0;
-                        return;
-                    }
+                    // struct tm tm;
+                    // if (strptime(meterData.timestamp_str, "%d.%m.%Y %H:%M:%S", &tm) != NULL)
+                    // {
+                    //// TODO: detect time zone summer time/winter time
+                    //     meterData.timestamp_unix = mktime(&tm) - 7200;
+                    //     Serial.print("Unix Time: ");
+                    //     Serial.println(meterData.timestamp_unix);
+                    // }
+                    // else
+                    // {
+                    //     Serial.println("Invalid Timestamp");
+                    //     receive_buffer_index = 0;
+                    //     return;
+                    // }
 
                     Serial.print("Timestamp: ");
                     Serial.println(meterData.timestamp_str);
@@ -391,8 +393,8 @@ void loop()
         submitToGraphite(meterData.timestamp_unix, GRAPHITE_POWER_FACTOR, meterData.cos_phi);
         submitToGraphite(meterData.timestamp_unix, GRAPHITE_ACTIVE_POWER_PLUS, meterData.power_plus);
         submitToGraphite(meterData.timestamp_unix, GRAPHITE_ACTIVE_ENERGY_PLUS, meterData.energy_plus);
-        // submitToGraphite(meterData.timestamp_unix, GRAPHITE_ACTIVE_POWER_MINUS, meterData.power_minus);
-        // submitToGraphite(meterData.timestamp_unix, GRAPHITE_ACTIVE_ENERGY_MINUS, meterData.energy_minus);
+        submitToGraphite(meterData.timestamp_unix, GRAPHITE_ACTIVE_POWER_MINUS, meterData.power_minus);
+        submitToGraphite(meterData.timestamp_unix, GRAPHITE_ACTIVE_ENERGY_MINUS, meterData.energy_minus);
         displayMeterData(&meterData);
 
         // After DLMS decoding is done, send some other stuff
@@ -438,11 +440,6 @@ void serial_dump() {
     String sketch_MD5 = ESP.getSketchMD5();
 
     Serial.printf("Name: %s\r\n", HOSTNAME);
-    // if (haveTime) {
-    //     Serial.print("Time: ");
-    //     printLocalTime(true);
-    // }
-    Serial.printf("Firmware: %s (base: %s)\r\n", my_ver, base_version);
     float sketchPct = 100 * sketch_size / sketch_space;
     Serial.printf("Sketch Size: %i (total: %i, %.1f%% used)\r\n", sketch_size, sketch_space, sketchPct);
     Serial.printf("ESP sdk: %s\r\n", ESP.getSdkVersion());

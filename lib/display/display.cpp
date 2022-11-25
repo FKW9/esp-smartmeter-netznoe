@@ -2,6 +2,9 @@
 
 TFT_eSPI tft = TFT_eSPI();
 
+void ICACHE_RAM_ATTR buttonUpPressed();
+void ICACHE_RAM_ATTR buttonDownPressed();
+
 void setupDisplay()
 {
 	tft.init();
@@ -10,12 +13,16 @@ void setupDisplay()
 	tft.setTextColor(TFT_WHITE, TFT_BLACK);
 	delay(100);
 	tft.println("------ INITIALIZING ------");
+	pinMode(33, INPUT_PULLUP);
+	pinMode(32, INPUT_PULLUP);
+	attachInterrupt(33, buttonUpPressed, FALLING);
+	attachInterrupt(32, buttonDownPressed, FALLING);
 }
 
 void displayRSSI()
 {
 	tft.setCursor(124, 9);
-	tft.fillRect(124,9,36,7,TFT_WHITE);
+	tft.fillRect(124, 9, 36, 7, TFT_WHITE);
 	tft.setTextColor(TFT_BLACK);
 	tft.printf("%ddBm", WiFi.RSSI());
 }
@@ -25,12 +32,15 @@ void displaySDCardStatus()
 	tft.setCursor(1, 17);
 	tft.setTextColor(TFT_BLACK);
 	tft.printf("SD Card free space: ");
-	tft.fillRect(110,17,50,7,TFT_WHITE);
+	tft.fillRect(110, 17, 50, 7, TFT_WHITE);
 	uint64_t s = getFreeSDSpace();
-	if (s == 0){
+	if (s == 0)
+	{
 		tft.setTextColor(TFT_RED);
 		tft.print("ERROR");
-	} else {
+	}
+	else
+	{
 		tft.printf("%lluMB\n", s);
 	}
 }
@@ -60,4 +70,28 @@ void displayMeterData(struct obisData *data)
 {
 	int16_t x = tft.getCursorX();
 	int16_t y = tft.getCursorY();
+}
+
+//variables to keep track of the timing of recent interrupts
+unsigned long button_time = 0;
+unsigned long last_button_time = 0;
+
+void ICACHE_RAM_ATTR buttonUpPressed()
+{
+	button_time = millis();
+	if (button_time - last_button_time > 350)
+	{
+		Serial.println("UP pressed");
+		last_button_time = button_time;
+	}
+}
+
+void ICACHE_RAM_ATTR buttonDownPressed()
+{
+	button_time = millis();
+	if (button_time - last_button_time > 350)
+	{
+		Serial.println("DOWN pressed");
+		last_button_time = button_time;
+	}
 }
