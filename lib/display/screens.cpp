@@ -1,6 +1,8 @@
 #include "display.h"
 #include "screens.h"
 
+#define HEADER "SMARTMETER V2.0"
+
 void Screen1()
 {
   etft.fillScreen(0xFFFF);
@@ -11,7 +13,7 @@ void Screen1()
   etft.setTextColor(0xFFFF);
   etft.setTTFFont(Arial_10_Bold);
   etft.setCursor(15, 4);
-  etft.print(F("SMARTMETER V1.0"));
+  etft.print(F(HEADER));
 
   // TextBox 2
   etft.drawRect(0, 19, 160, 27, 0x0000);
@@ -99,6 +101,76 @@ void Screen1()
   etft.print(F("L3"));
 }
 
-void Screen2()
-{
+void Screen2(){
+  etft.fillScreen(0xFFFF);
+
+  // TextBox 2
+  etft.drawRect(0, 0, 160, 20, 0x0861);
+  etft.fillRect(1, 1, 158, 18, 0x39C7);
+  etft.setTextColor(0xFFFF);
+  etft.setTTFFont(Arial_10_Bold);
+  etft.setCursor(15, 4);
+  etft.print(F(HEADER));
+
+  // TextBox 2
+  etft.drawRect(0, 19, 160, 27, 0x0000);
+  etft.fillRect(1, 20, 158, 25, 0x1A6F);
+  etft.setCursor(13, 27);
+  etft.print(last_meter_data.timestamp_str);
+
+  // TextBox 2
+  etft.drawRect(0, 45, 76, 28, 0x0000);
+  etft.fillRect(1, 46, 74, 26, 0x8D5B);
+  etft.setTextColor(0x02C3);
+  etft.setTTFFont(Arial_14_Bold);
+  etft.setCursor(15, 50);
+  etft.print(F("P    ="));
+
+  // TextBox 2
+  etft.drawRect(0, 72, 76, 28, 0x0000);
+  etft.fillRect(1, 73, 74, 26, 0x8D5B);
+  etft.setCursor(15, 77);
+  etft.print(F("P    ="));
+
+  // TextBox 1
+  etft.setTTFFont(Arial_9_Bold);
+  etft.setCursor(28, 60);
+  etft.print(F("AB"));
+
+  // TextBox 22
+  etft.setCursor(29, 87);
+  etft.print(F("ZU"));
+
+  // TextBox 2
+  etft.drawRect(0, 99, 76, 29, 0x0000);
+  etft.fillRect(1, 100, 74, 27, 0x8D5B);
+  etft.setTTFFont(Arial_10_Bold);
+  etft.setCursor(0, 107);
+  etft.print(F(" cos(phi)"));
+
+  // TextBox 2
+  etft.drawRect(75, 99, 85, 29, 0x0000);
+  etft.fillRect(76, 100, 83, 27, 0x8D5B);
+  etft.setTextColor(0x0000);
+  etft.setTTFFont(Arial_14_Bold);
+  etft.setCursor(82, 106);
+  etft.printf("%.3f", last_meter_data.cos_phi);
+
+  // TextBox 2
+  etft.drawRect(75, 72, 85, 28, 0x0000);
+  etft.fillRect(76, 73, 83, 26, 0x8D5B);
+  etft.setCursor(82, 79);
+  etft.printf("%.0f W", last_meter_data.power_plus);
+
+  // TextBox 2
+  etft.drawRect(75, 45, 85, 28, 0x0000);
+  etft.fillRect(76, 46, 83, 26, 0x8D5B);
+  etft.setCursor(82, 52);
+  etft.printf("%.0f W", last_meter_data.power_minus);
+
+  // TextBox 2
+  etft.setTextColor(0x02C3);
+  etft.setCursor(62, 106);
+  etft.print("=");
+
 }
