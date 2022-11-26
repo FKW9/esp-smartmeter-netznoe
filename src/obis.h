@@ -1,3 +1,6 @@
+#ifndef OBIS_H_
+#define OBIS_H_
+
 #include <inttypes.h>
 
 // Scaling
@@ -79,7 +82,7 @@ static const uint8_t OBIS_ACTIVE_ENERGY_MINUS[] {
     0x02, 0x08 // 1.0.2.8.0.255
 };
 
-struct obisData {
+typedef struct ObisData {
     char timestamp_str[21];
     time_t timestamp_unix;
     float voltage_l1;
@@ -93,4 +96,6 @@ struct obisData {
     float power_minus;
     float energy_plus;
     float energy_minus;
-};
+} obisData;
+
+#endif

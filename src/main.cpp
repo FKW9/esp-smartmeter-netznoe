@@ -32,7 +32,6 @@ void setup()
 
     // Debug port
     Serial.begin(115200);
-    Serial.println("Booting...");
 
     // MBus input from MBus Slave Click
     Serial2.begin(2400, SERIAL_8E1);
@@ -42,12 +41,14 @@ void setup()
     setupWiFi();
     setupSDCard();
     displaySDCardStatus();
+    delay(1000);
 }
 
 // MAIN LOOP
 void loop()
 {
     checkWiFiConnection();
+    displayUpdate();
 
     uint32_t current_time = millis();
 
@@ -108,7 +109,7 @@ void loop()
 
         // Decode data
         uint16_t current_position = DECODER_START_OFFSET;
-        obisData meterData;
+        obisData meter_data;
 
         do
         {
@@ -139,20 +140,20 @@ void loop()
                     minute = plaintext[current_position + 8];
                     second = plaintext[current_position + 9];
 
-                    sprintf(meterData.timestamp_str, "%02u.%02u.%04u %02u:%02u:%02u", day, month, year, hour, minute, second);
+                    sprintf(meter_data.timestamp_str, "%02u.%02u.%04u %02u:%02u:%02u", day, month, year, hour, minute, second);
 
-                    meterData.timestamp_unix = -1;
+                    meter_data.timestamp_unix = -1;
                     // COMMENTED OUT BECAUSE I DONT WANT THE PAIN CONVERSION WITH TIMEZONZES
                     // JUST USE -1 TO USE CURRENT TIME OF GRAPHITE HOST
                     //
                     // convert to unix timestamp for graphite
                     // struct tm tm;
-                    // if (strptime(meterData.timestamp_str, "%d.%m.%Y %H:%M:%S", &tm) != NULL)
+                    // if (strptime(meter_data.timestamp_str, "%d.%m.%Y %H:%M:%S", &tm) != NULL)
                     // {
                     //// TODO: detect time zone summer time/winter time
-                    //     meterData.timestamp_unix = mktime(&tm) - 7200;
+                    //     meter_data.timestamp_unix = mktime(&tm) - 7200;
                     //     Serial.print("Unix Time: ");
-                    //     Serial.println(meterData.timestamp_unix);
+                    //     Serial.println(meter_data.timestamp_unix);
                     // }
                     // else
                     // {
@@ -162,7 +163,7 @@ void loop()
                     // }
 
                     Serial.print("Timestamp: ");
-                    Serial.println(meterData.timestamp_str);
+                    Serial.println(meter_data.timestamp_str);
 
                     current_position = 34;
                     data_length = plaintext[current_position + OBIS_LENGTH_OFFSET];
@@ -274,25 +275,25 @@ void loop()
                 switch (code_type)
                 {
                 case TYPE_ACTIVE_POWER_PLUS:
-                    meterData.power_plus = float_value;
+                    meter_data.power_plus = float_value;
                     Serial.print("ActivePowerPlus ");
                     Serial.println(float_value);
                     break;
 
                 case TYPE_ACTIVE_POWER_MINUS:
-                    meterData.power_minus = float_value;
+                    meter_data.power_minus = float_value;
                     Serial.print("ActivePowerMinus ");
                     Serial.println(float_value);
                     break;
 
                 case TYPE_ACTIVE_ENERGY_PLUS:
-                    meterData.energy_plus = float_value;
+                    meter_data.energy_plus = float_value;
                     Serial.print("ActiveEnergyPlus ");
                     Serial.println(float_value);
                     break;
 
                 case TYPE_ACTIVE_ENERGY_MINUS:
-                    meterData.energy_minus = float_value;
+                    meter_data.energy_minus = float_value;
                     Serial.print("ActiveEnergyMinus ");
                     Serial.println(float_value);
                     break;
@@ -317,43 +318,43 @@ void loop()
                 switch (code_type)
                 {
                 case TYPE_VOLTAGE_L1:
-                    meterData.voltage_l1 = float_value;
+                    meter_data.voltage_l1 = float_value;
                     Serial.print("VoltageL1 ");
                     Serial.println(float_value);
                     break;
 
                 case TYPE_VOLTAGE_L2:
-                    meterData.voltage_l2 = float_value;
+                    meter_data.voltage_l2 = float_value;
                     Serial.print("VoltageL2 ");
                     Serial.println(float_value);
                     break;
 
                 case TYPE_VOLTAGE_L3:
-                    meterData.voltage_l3 = float_value;
+                    meter_data.voltage_l3 = float_value;
                     Serial.print("VoltageL3 ");
                     Serial.println(float_value);
                     break;
 
                 case TYPE_CURRENT_L1:
-                    meterData.current_l1 = float_value;
+                    meter_data.current_l1 = float_value;
                     Serial.print("CurrentL1 ");
                     Serial.println(float_value);
                     break;
 
                 case TYPE_CURRENT_L2:
-                    meterData.current_l2 = float_value;
+                    meter_data.current_l2 = float_value;
                     Serial.print("CurrentL2 ");
                     Serial.println(float_value);
                     break;
 
                 case TYPE_CURRENT_L3:
-                    meterData.current_l3 = float_value;
+                    meter_data.current_l3 = float_value;
                     Serial.print("CurrentL3 ");
                     Serial.println(float_value);
                     break;
 
                 case TYPE_POWER_FACTOR:
-                    meterData.cos_phi = float_value;
+                    meter_data.cos_phi = float_value;
                     Serial.print("PowerFactor ");
                     Serial.println(float_value);
                     break;
@@ -384,22 +385,21 @@ void loop()
         Serial.println("Received valid data!");
 
         // send the data
-        submitToGraphite(meterData.timestamp_unix, GRAPHITE_VOLTAGE_L1, meterData.voltage_l1);
-        submitToGraphite(meterData.timestamp_unix, GRAPHITE_VOLTAGE_L2, meterData.voltage_l2);
-        submitToGraphite(meterData.timestamp_unix, GRAPHITE_VOLTAGE_L3, meterData.voltage_l3);
-        submitToGraphite(meterData.timestamp_unix, GRAPHITE_CURRENT_L1, meterData.current_l1);
-        submitToGraphite(meterData.timestamp_unix, GRAPHITE_CURRENT_L2, meterData.current_l2);
-        submitToGraphite(meterData.timestamp_unix, GRAPHITE_CURRENT_L3, meterData.current_l3);
-        submitToGraphite(meterData.timestamp_unix, GRAPHITE_POWER_FACTOR, meterData.cos_phi);
-        submitToGraphite(meterData.timestamp_unix, GRAPHITE_ACTIVE_POWER_PLUS, meterData.power_plus);
-        submitToGraphite(meterData.timestamp_unix, GRAPHITE_ACTIVE_ENERGY_PLUS, meterData.energy_plus);
-        submitToGraphite(meterData.timestamp_unix, GRAPHITE_ACTIVE_POWER_MINUS, meterData.power_minus);
-        submitToGraphite(meterData.timestamp_unix, GRAPHITE_ACTIVE_ENERGY_MINUS, meterData.energy_minus);
-        displayMeterData(&meterData);
+        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_VOLTAGE_L1, meter_data.voltage_l1);
+        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_VOLTAGE_L2, meter_data.voltage_l2);
+        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_VOLTAGE_L3, meter_data.voltage_l3);
+        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_CURRENT_L1, meter_data.current_l1);
+        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_CURRENT_L2, meter_data.current_l2);
+        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_CURRENT_L3, meter_data.current_l3);
+        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_POWER_FACTOR, meter_data.cos_phi);
+        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_ACTIVE_POWER_PLUS, meter_data.power_plus);
+        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_ACTIVE_ENERGY_PLUS, meter_data.energy_plus);
+        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_ACTIVE_POWER_MINUS, meter_data.power_minus);
+        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_ACTIVE_ENERGY_MINUS, meter_data.energy_minus);
+        displayMeterData(&meter_data);
 
         // After DLMS decoding is done, send some other stuff
         submitToGraphite(-1, GRAPHITE_RSSI, WiFi.RSSI());
-        displayRSSI();
 
         // Read RHT sensor
         if (newMeasurementReady(rht_ready)){
@@ -409,26 +409,26 @@ void loop()
                     submitToGraphite(-1, GRAPHITE_RH, humidity);
                     submitToGraphite(-1, GRAPHITE_T, temperature);
 
-                    #ifdef DEBUG
-                        tft.setCursor(0, 80);
-                        tft.print(temperature);
-                        tft.print(" - ");
-                        tft.println(humidity);
-                    #endif
+                    // #ifdef DEBUG
+                    //     etft.setCursor(0, 80);
+                    //     etft.print(temperature);
+                    //     etft.print(" - ");
+                    //     etft.println(humidity);
+                    // #endif
                 }
             }
         }
 
-        #ifdef DEBUG
-            static uint16_t valid_packet_cnt = 0;
-            valid_packet_cnt++;
-            int16_t x = tft.getCursorX();
-            int16_t y = tft.getCursorY();
-            tft.setTextColor(TFT_BLUE, TFT_WHITE, true);
-            tft.printf("Received valid data! (%d)", valid_packet_cnt);
-            tft.setTextColor(TFT_WHITE, TFT_BLACK);
-            tft.setCursor(x, y);
-        #endif
+        // #ifdef DEBUG
+        //     static uint16_t valid_packet_cnt = 0;
+        //     valid_packet_cnt++;
+        //     int16_t x = etft.getCursorX();
+        //     int16_t y = etft.getCursorY();
+        //     etft.setTextColor(TFT_BLUE, TFT_WHITE, true);
+        //     etft.printf("Received valid data! (%d)", valid_packet_cnt);
+        //     etft.setTextColor(TFT_WHITE, TFT_BLACK);
+        //     etft.setCursor(x, y);
+        // #endif
     }
 }
 

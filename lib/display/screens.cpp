@@ -1,0 +1,104 @@
+#include "display.h"
+#include "screens.h"
+
+void Screen1()
+{
+  etft.fillScreen(0xFFFF);
+
+  // TextBox 2
+  etft.drawRect(0, 0, 160, 20, 0x0861);
+  etft.fillRect(1, 1, 158, 18, 0x39C7);
+  etft.setTextColor(0xFFFF);
+  etft.setTTFFont(Arial_10_Bold);
+  etft.setCursor(15, 4);
+  etft.print(F("SMARTMETER V1.0"));
+
+  // TextBox 2
+  etft.drawRect(0, 19, 160, 27, 0x0000);
+  etft.fillRect(1, 20, 158, 25, 0x1A6F);
+  etft.setCursor(13, 27);
+  etft.print(last_meter_data.timestamp_str);
+
+  // TextBox 2
+  etft.drawRect(0, 99, 25, 29, 0x0000);
+  etft.fillRect(1, 100, 23, 27, 0xF590);
+  etft.setTextColor(TFT_RED);
+  etft.setTTFFont(Arial_16_Bold);
+  etft.setCursor(9, 105);
+  etft.print(F("I"));
+
+  // TextBox 2
+  etft.drawRect(0, 72, 25, 28, 0x0000);
+  etft.fillRect(1, 73, 23, 26, 0x8D5B);
+  etft.setTextColor(TFT_BLUE);
+  etft.setTTFFont(Arial_14_Bold);
+  etft.setCursor(5, 79);
+  etft.print(F("U"));
+
+  // TextBox 2
+  etft.drawRect(0, 45, 25, 28, 0x0000);
+  etft.fillRect(1, 46, 23, 26, 0x0000);
+
+  etft.drawLine(24, 45, 0, 72, 0x0000);
+  // TextBox 2
+  etft.drawRect(24, 99, 46, 29, 0x0000);
+  etft.fillRect(25, 100, 44, 27, 0xF590);
+  etft.setTextColor(0x0000);
+  etft.setTTFFont(Arial_9_Bold);
+  etft.setCursor(34, 110);
+  etft.printf("%.1f", last_meter_data.current_l1);
+
+  // TextBox 2
+  etft.drawRect(69, 99, 46, 29, 0x0000);
+  etft.fillRect(70, 100, 44, 27, 0xF590);
+  etft.setCursor(79, 110);
+  etft.printf("%.1f", last_meter_data.current_l2);
+
+  // TextBox 2
+  etft.drawRect(114, 99, 46, 29, 0x0000);
+  etft.fillRect(115, 100, 44, 27, 0xF590);
+  etft.setCursor(124, 110);
+  etft.printf("%.1f", last_meter_data.current_l3);
+
+  // TextBox 2
+  etft.drawRect(24, 72, 46, 28, 0x0000);
+  etft.fillRect(25, 73, 44, 26, 0x8D5B);
+  etft.setCursor(31, 82);
+  etft.printf("%.1f", last_meter_data.voltage_l1);
+
+  // TextBox 2
+  etft.drawRect(69, 72, 46, 28, 0x0000);
+  etft.fillRect(70, 73, 44, 26, 0x8D5B);
+  etft.setCursor(76, 82);
+  etft.printf("%.1f", last_meter_data.voltage_l2);
+
+  // TextBox 2
+  etft.drawRect(114, 72, 46, 28, 0x0000);
+  etft.fillRect(115, 73, 44, 26, 0x8D5B);
+  etft.setCursor(121, 82);
+  etft.printf("%.1f", last_meter_data.voltage_l3);
+
+  // TextBox 2
+  etft.drawRect(24, 45, 46, 28, 0x0000);
+  etft.fillRect(25, 46, 44, 26, 0x39C7);
+  etft.setTextColor(0xFFFF);
+  etft.setTTFFont(Arial_16_Bold);
+  etft.setCursor(33, 50);
+  etft.print(F("L1"));
+
+  // TextBox 2
+  etft.drawRect(69, 45, 46, 28, 0x0000);
+  etft.fillRect(70, 46, 44, 26, 0x39C7);
+  etft.setCursor(78, 50);
+  etft.print(F("L2"));
+
+  // TextBox 2
+  etft.drawRect(114, 45, 46, 28, 0x0000);
+  etft.fillRect(115, 46, 44, 26, 0x39C7);
+  etft.setCursor(123, 50);
+  etft.print(F("L3"));
+}
+
+void Screen2()
+{
+}

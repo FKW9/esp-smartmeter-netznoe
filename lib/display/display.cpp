@@ -1,75 +1,93 @@
 #include "display.h"
+#include "screens.h"
 
 TFT_eSPI tft = TFT_eSPI();
+TFT_eSPI_ext etft = TFT_eSPI_ext(&tft);
+
+uint8_t current_screen = 0;
+uint8_t previous_screen = 0;
+uint8_t screens = 2;
+obisData last_meter_data;
 
 void ICACHE_RAM_ATTR buttonUpPressed();
 void ICACHE_RAM_ATTR buttonDownPressed();
 
 void setupDisplay()
 {
-	tft.init();
-	tft.setRotation(1);
-	tft.fillScreen(TFT_BLACK);
-	tft.setTextColor(TFT_WHITE, TFT_BLACK);
-	delay(100);
-	tft.println("------ INITIALIZING ------");
+	etft.init();
+	etft.setRotation(1);
+	etft.fillScreen(TFT_BLACK);
+	etft.setTextColor(TFT_WHITE, TFT_BLACK);
+	etft.println("<<< INITIALIZING >>>");
+
+	// Button Pins
 	pinMode(33, INPUT_PULLUP);
 	pinMode(32, INPUT_PULLUP);
 	attachInterrupt(33, buttonUpPressed, FALLING);
 	attachInterrupt(32, buttonDownPressed, FALLING);
 }
 
-void displayRSSI()
-{
-	tft.setCursor(124, 9);
-	tft.fillRect(124, 9, 36, 7, TFT_WHITE);
-	tft.setTextColor(TFT_BLACK);
-	tft.printf("%ddBm", WiFi.RSSI());
-}
-
 void displaySDCardStatus()
 {
-	tft.setCursor(1, 17);
-	tft.setTextColor(TFT_BLACK);
-	tft.printf("SD Card free space: ");
-	tft.fillRect(110, 17, 50, 7, TFT_WHITE);
+	// etft.setCursor(1, 17);
+	// etft.setTextColor(TFT_BLACK);
+	// etft.fillRect(110, 17, 50, 7, TFT_WHITE);
 	uint64_t s = getFreeSDSpace();
 	if (s == 0)
 	{
-		tft.setTextColor(TFT_RED);
-		tft.print("ERROR");
+		etft.setTextColor(TFT_RED);
+		etft.println("NO SD CARD FOUND!");
 	}
 	else
 	{
-		tft.printf("%lluMB\n", s);
+		etft.printf("SD Card free space: ");
+		etft.printf("%lluMB\n", s);
 	}
 }
 
 void displayWiFiInfo()
 {
-	tft.setCursor(1, 1);
-	tft.fillRect(0, 0, 160, 25, TFT_WHITE);
-	tft.setTextColor(TFT_BLACK);
-	tft.print("WiFi: ");
+	etft.print("WiFi: ");
 	if (WiFi.isConnected())
 	{
-		tft.setTextColor(TFT_DARKGREEN);
-		tft.println("Connected");
-		tft.setTextColor(TFT_BLACK);
-		tft.printf("IP: %s", WiFi.localIP().toString().c_str());
-		displayRSSI();
+		etft.setTextColor(TFT_GREEN);
+		etft.println("Connected");
+		etft.setTextColor(TFT_WHITE);
+		etft.printf("IP: %s\n", WiFi.localIP().toString().c_str());
+		etft.printf("Signal: %ddBm\n", WiFi.RSSI());
 	}
 	else
 	{
-		tft.setTextColor(TFT_RED);
-		tft.println("Not Connected");
+		etft.setTextColor(TFT_RED);
+		etft.println("Not Connected");
 	}
 }
 
-void displayMeterData(struct obisData *data)
+void displayMeterData(obisData *data)
 {
-	int16_t x = tft.getCursorX();
-	int16_t y = tft.getCursorY();
+	last_meter_data = *data;
+	Serial.println(last_meter_data.energy_plus);
+	displayUpdate(true);
+}
+
+void displayUpdate(bool force){
+	if((current_screen != previous_screen) || force){
+		switch (current_screen)
+		{
+		case 0:
+			Screen1();
+			break;
+
+		case 1:
+			Screen2();
+			break;
+
+		default:
+			break;
+		}
+		if(!force)
+			previous_screen = current_screen;
+	}
 }
 
 //variables to keep track of the timing of recent interrupts
@@ -91,7 +109,10 @@ void ICACHE_RAM_ATTR buttonDownPressed()
 	button_time = millis();
 	if (button_time - last_button_time > 350)
 	{
-		Serial.println("DOWN pressed");
+		current_screen++;
+		if(current_screen >= screens)
+			current_screen = 0;
+
 		last_button_time = button_time;
 	}
 }
