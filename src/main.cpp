@@ -6,6 +6,7 @@
 #include "display.h"
 #include "hte501.h"
 #include "sdcard.h"
+#include "ESPLogger.h"
 #include "../config.h"
 
 // Variables for DLMS decoding
@@ -23,6 +24,12 @@ uint32_t swap_uint32(uint32_t val);
 uint16_t swap_uint16(uint16_t val);
 void serial_dump();
 
+// Variables for Logging
+// NOTE: the directories to the log file must exist!
+#ifdef SD_CARD_LOGGING
+uint8_t sd_available = 0;
+#endif
+
 // SETUP
 void setup()
 {
@@ -39,9 +46,12 @@ void setup()
     Serial2.setTimeout(2);
 
     setupWiFi();
-    setupSDCard();
+#ifdef SD_CARD_LOGGING
+    sd_available = setupSDCard();
     displaySDCardStatus();
-    delay(1000);
+#endif
+    etft.print("Waiting for Data...");
+    delay(2000);
 }
 
 // MAIN LOOP
@@ -109,7 +119,7 @@ void loop()
 
         // Decode data
         uint16_t current_position = DECODER_START_OFFSET;
-        obisData meter_data;
+        meterData meter_data;
 
         do
         {
@@ -384,6 +394,20 @@ void loop()
         receive_buffer_index = 0;
         Serial.println("Received valid data!");
 
+        meter_data.rssi = WiFi.RSSI();
+        // Read RHT sensor
+        if (newMeasurementReady(rht_ready))
+        {
+            if (rht_ready)
+            {
+                if (fetchPeriodicTemperatureHumidity(temperature, humidity))
+                {
+                    meter_data.humidity = humidity;
+                    meter_data.temperature = temperature;
+                }
+            }
+        }
+
         // send the data
         submitToGraphite(meter_data.timestamp_unix, GRAPHITE_VOLTAGE_L1, meter_data.voltage_l1);
         submitToGraphite(meter_data.timestamp_unix, GRAPHITE_VOLTAGE_L2, meter_data.voltage_l2);
@@ -393,47 +417,55 @@ void loop()
         submitToGraphite(meter_data.timestamp_unix, GRAPHITE_CURRENT_L3, meter_data.current_l3);
         submitToGraphite(meter_data.timestamp_unix, GRAPHITE_POWER_FACTOR, meter_data.cos_phi);
         submitToGraphite(meter_data.timestamp_unix, GRAPHITE_ACTIVE_POWER_PLUS, meter_data.power_plus);
-        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_ACTIVE_ENERGY_PLUS, meter_data.energy_plus);
         submitToGraphite(meter_data.timestamp_unix, GRAPHITE_ACTIVE_POWER_MINUS, meter_data.power_minus);
+        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_ACTIVE_ENERGY_PLUS, meter_data.energy_plus);
         submitToGraphite(meter_data.timestamp_unix, GRAPHITE_ACTIVE_ENERGY_MINUS, meter_data.energy_minus);
+        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_T, meter_data.temperature);
+        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_RH, meter_data.humidity);
+        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_RSSI, meter_data.rssi);
+
+        // update the display
         displayMeterData(&meter_data);
 
-        // After DLMS decoding is done, send some other stuff
-        submitToGraphite(-1, GRAPHITE_RSSI, WiFi.RSSI());
+// log to file
+#ifdef SD_CARD_LOGGING
+        if (sd_available)
+        {
+            //
+            char filename[13] = {"/MM_YYYY.CSV"};
+            memcpy(&filename[1], &meter_data.timestamp_str[3], 2);
+            memcpy(&filename[4], &meter_data.timestamp_str[6], 4);
 
-        // Read RHT sensor
-        if (newMeasurementReady(rht_ready)){
-            if (rht_ready){
-                if (fetchPeriodicTemperatureHumidity(temperature, humidity))
-                {
-                    submitToGraphite(-1, GRAPHITE_RH, humidity);
-                    submitToGraphite(-1, GRAPHITE_T, temperature);
+            ESPLogger logger(filename, SD_MMC);
+            logger.setSizeLimit(80000000); //80MB max size, 1 month is about 65MB
+            logger.setChunkSize(128);
 
-                    // #ifdef DEBUG
-                    //     etft.setCursor(0, 80);
-                    //     etft.print(temperature);
-                    //     etft.print(" - ");
-                    //     etft.println(humidity);
-                    // #endif
-                }
+            if(logger.getSize() < 10){
+                logger.append("DATUM_ZEIT,U_L1,U_L2,U_L3,I_L1,I_L2,I_L3,COS(PHI),P_ZU,P_AB,E_ZU,E_AB,T,RH,WIFI_RSSI");
+            }
+
+            char record[128];
+            sprintf(record, "%s,%.1f,%.1f,%.1f,%.2f,%.2f,%.2f,%.3f,%.1f,%.1f,%.0f,%.0f,%.2f,%.2f,%d", meter_data.timestamp_str, meter_data.voltage_l1, meter_data.voltage_l2, meter_data.voltage_l3, meter_data.current_l1, meter_data.current_l2, meter_data.current_l3, meter_data.cos_phi, meter_data.power_plus, meter_data.power_minus, meter_data.energy_plus, meter_data.energy_minus, meter_data.temperature, meter_data.humidity, meter_data.rssi);
+            // the second parameter allows to prepend to the record the current timestamp
+            bool success = logger.append(record);
+            if (success)
+            {
+                Serial.println("Record stored on SD Card!");
+            }
+            else
+            {
+                if (logger.isFull())
+                    Serial.println("Record NOT stored! File reached max size!");
+                else
+                    Serial.println("Something went wrong, record NOT stored!");
             }
         }
-
-        // #ifdef DEBUG
-        //     static uint16_t valid_packet_cnt = 0;
-        //     valid_packet_cnt++;
-        //     int16_t x = etft.getCursorX();
-        //     int16_t y = etft.getCursorY();
-        //     etft.setTextColor(TFT_BLUE, TFT_WHITE, true);
-        //     etft.printf("Received valid data! (%d)", valid_packet_cnt);
-        //     etft.setTextColor(TFT_WHITE, TFT_BLACK);
-        //     etft.setCursor(x, y);
-        // #endif
+#endif
     }
 }
 
-
-void serial_dump() {
+void serial_dump()
+{
 
     uint32_t sketch_size = ESP.getSketchSize();
     uint32_t sketch_space = ESP.getFreeSketchSpace();
@@ -447,17 +479,20 @@ void serial_dump() {
     Serial.println("WiFi IP address: " + WiFi.localIP().toString());
 
     int64_t sec = esp_timer_get_time() / 1000000;
-    int64_t up_days = int64_t(floor(sec/86400));
-    int up_hours = int64_t(floor(sec/3600)) % 24;
-    int up_min = int64_t(floor(sec/60)) % 60;
+    int64_t up_days = int64_t(floor(sec / 86400));
+    int up_hours = int64_t(floor(sec / 3600)) % 24;
+    int up_min = int64_t(floor(sec / 60)) % 60;
     int up_sec = sec % 60;
 
     Serial.printf("System up: %" PRId64 ":%02i:%02i:%02i (d:h:m:s)\r\n", up_days, up_hours, up_min, up_sec);
     Serial.printf("CPU Freq: %i MHz\r\n", ESP.getCpuFreqMHz());
     Serial.printf("Heap: %i, free: %i, min free: %i, max block: %i\r\n", ESP.getHeapSize(), ESP.getFreeHeap(), ESP.getMinFreeHeap(), ESP.getMaxAllocHeap());
-    if(psramFound()) {
+    if (psramFound())
+    {
         Serial.printf("Psram: %i, free: %i, min free: %i, max block: %i\r\n", ESP.getPsramSize(), ESP.getFreePsram(), ESP.getMinFreePsram(), ESP.getMaxAllocPsram());
-    } else {
+    }
+    else
+    {
         Serial.printf("Psram: Not found.\r\n");
     }
     // Filesystems
@@ -471,12 +506,10 @@ void serial_dump() {
     return;
 }
 
-
 uint16_t swap_uint16(uint16_t val)
 {
     return (val << 8) | (val >> 8);
 }
-
 
 uint32_t swap_uint32(uint32_t val)
 {
