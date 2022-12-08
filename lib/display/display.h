@@ -12,11 +12,11 @@
 extern TFT_eSPI tft;  // Invoke library, pins defined in User_Setup.h
 extern TFT_eSPI_ext etft;
 
-extern obisData last_meter_data;
+extern meterData last_meter_data;
 
 void setupDisplay();
 void displayUpdate(bool force = false);
-void displayMeterData(obisData *data);
+void displayMeterData(meterData *data);
 void displayWiFiInfo();
 void displaySDCardStatus();
 

@@ -6,11 +6,11 @@ TFT_eSPI_ext etft = TFT_eSPI_ext(&tft);
 
 uint8_t current_screen = 0;
 uint8_t previous_screen = 0;
-uint8_t screens = 3;
-obisData last_meter_data;
+uint8_t screens = 4;
+meterData last_meter_data;
 
-void ICACHE_RAM_ATTR buttonUpPressed();
-void ICACHE_RAM_ATTR buttonDownPressed();
+void ICACHE_RAM_ATTR buttonEnterPressed();
+void ICACHE_RAM_ATTR buttonNextPressed();
 
 void setupDisplay()
 {
@@ -23,8 +23,8 @@ void setupDisplay()
 	// Button Pins
 	pinMode(33, INPUT_PULLUP);
 	pinMode(32, INPUT_PULLUP);
-	attachInterrupt(33, buttonUpPressed, FALLING);
-	attachInterrupt(32, buttonDownPressed, FALLING);
+	attachInterrupt(33, buttonEnterPressed, FALLING);
+	attachInterrupt(32, buttonNextPressed, FALLING);
 }
 
 void displaySDCardStatus()
@@ -63,10 +63,9 @@ void displayWiFiInfo()
 	}
 }
 
-void displayMeterData(obisData *data)
+void displayMeterData(meterData *data)
 {
 	last_meter_data = *data;
-	Serial.println(last_meter_data.energy_plus);
 	displayUpdate(true);
 }
 
@@ -86,6 +85,10 @@ void displayUpdate(bool force){
 			Screen3();
 			break;
 
+		case 3:
+			Screen4();
+			break;
+
 		default:
 			break;
 		}
@@ -98,20 +101,20 @@ void displayUpdate(bool force){
 unsigned long button_time = 0;
 unsigned long last_button_time = 0;
 
-void ICACHE_RAM_ATTR buttonUpPressed()
+void ICACHE_RAM_ATTR buttonEnterPressed()
 {
 	button_time = millis();
-	if (button_time - last_button_time > 350)
+	if (button_time - last_button_time > 400)
 	{
 		Serial.println("UP pressed");
 		last_button_time = button_time;
 	}
 }
 
-void ICACHE_RAM_ATTR buttonDownPressed()
+void ICACHE_RAM_ATTR buttonNextPressed()
 {
 	button_time = millis();
-	if (button_time - last_button_time > 350)
+	if (button_time - last_button_time > 400)
 	{
 		current_screen++;
 		if(current_screen >= screens)
