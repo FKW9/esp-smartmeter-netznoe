@@ -101,7 +101,8 @@ void Screen1()
   etft.print(F("L3"));
 }
 
-void Screen2(){
+void Screen2()
+{
   etft.fillScreen(0xFFFF);
 
   // TextBox 2
@@ -172,5 +173,75 @@ void Screen2(){
   etft.setTextColor(0x02C3);
   etft.setCursor(62, 106);
   etft.print("=");
+}
 
+void Screen3()
+{
+  etft.fillScreen(0xFFFF);
+
+  // TextBox 2
+  etft.drawRect(0, 0, 160, 20, 0x0861);
+  etft.fillRect(1, 1, 158, 18, 0x39C7);
+  etft.setTextColor(0xFFFF);
+  etft.setTTFFont(Arial_10_Bold);
+  etft.setCursor(15, 4);
+  etft.print(F(HEADER));
+
+  // TextBox 2
+  etft.drawRect(0, 19, 160, 27, 0x0000);
+  etft.fillRect(1, 20, 158, 25, 0x1A6F);
+  etft.setCursor(13, 27);
+  etft.print(last_meter_data.timestamp_str);
+
+  // TextBox 2
+  etft.drawRect(0, 45, 51, 28, 0x0000);
+  etft.fillRect(1, 46, 49, 26, 0x8D5B);
+  etft.setTextColor(0xC2C2);
+  etft.setTTFFont(Arial_14_Bold);
+  etft.setCursor(1, 50);
+  etft.print(F("E    ="));
+
+  // TextBox 1
+  etft.setTextColor(0xC2C2);
+  etft.setTTFFont(Arial_9_Bold);
+  etft.setCursor(15, 60);
+  etft.print(F("AB"));
+
+  // TextBox 2
+  etft.drawRect(0, 72, 51, 28, 0x0000);
+  etft.fillRect(1, 73, 49, 26, 0x8D5B);
+  etft.setTextColor(0xC2C2);
+  etft.setTTFFont(Arial_14_Bold);
+  etft.setCursor(1, 77);
+  etft.print(F("E    ="));
+
+  // TextBox 22
+  etft.setTextColor(0xC2C2);
+  etft.setTTFFont(Arial_9_Bold);
+  etft.setCursor(16, 87);
+  etft.print(F("ZU"));
+
+  // TextBox 2
+  etft.drawRect(50, 72, 110, 28, 0x0000);
+  etft.fillRect(51, 73, 108, 26, 0x8D5B);
+  etft.setTextColor(0x0000);
+  etft.setTTFFont(Arial_14_Bold);
+  etft.setCursor(52, 77);
+  etft.printf("%.1f kWh", last_meter_data.energy_plus / 1e3);
+
+  // TextBox 2
+  etft.drawRect(0, 100, 160, 28, 0x0000);
+  etft.fillRect(1, 101, 158, 26, 0x8D5B);
+  etft.setTextColor(0x0000);
+  etft.setTTFFont(Arial_8_Bold);
+  etft.setCursor(27, 109);
+  etft.print(F("(seit Aufzeichnung)"));
+
+  // TextBox 2
+  etft.drawRect(50, 45, 110, 28, 0x0000);
+  etft.fillRect(51, 46, 108, 26, 0x8D5B);
+  etft.setTextColor(0x0000);
+  etft.setTTFFont(Arial_14_Bold);
+  etft.setCursor(52, 50);
+  etft.printf("%.1f kWh", last_meter_data.energy_minus / 1e3);
 }

@@ -6,7 +6,7 @@ TFT_eSPI_ext etft = TFT_eSPI_ext(&tft);
 
 uint8_t current_screen = 0;
 uint8_t previous_screen = 0;
-uint8_t screens = 2;
+uint8_t screens = 3;
 obisData last_meter_data;
 
 void ICACHE_RAM_ATTR buttonUpPressed();
@@ -80,6 +80,10 @@ void displayUpdate(bool force){
 
 		case 1:
 			Screen2();
+			break;
+
+		case 2:
+			Screen3();
 			break;
 
 		default:

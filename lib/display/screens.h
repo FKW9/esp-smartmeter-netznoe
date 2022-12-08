@@ -11,5 +11,6 @@
 
 void Screen1();
 void Screen2();
+void Screen3();
 
 #endif
