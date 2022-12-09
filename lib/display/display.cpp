@@ -40,7 +40,7 @@ void displaySDCardStatus()
 	}
 	else
 	{
-		etft.printf("SD Card free space: ");
+		etft.printf("SD Free Space: ");
 		etft.printf("%lluMB\n", s);
 	}
 }

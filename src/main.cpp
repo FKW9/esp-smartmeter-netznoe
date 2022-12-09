@@ -431,22 +431,33 @@ void loop()
 #ifdef SD_CARD_LOGGING
         if (sd_available)
         {
-            //
-            char filename[13] = {"/MM_YYYY.CSV"};
-            memcpy(&filename[1], &meter_data.timestamp_str[3], 2);
-            memcpy(&filename[4], &meter_data.timestamp_str[6], 4);
+            // check for free space, if smaller than 150MB, delete old file
+            while((SD_MMC.totalBytes() - SD_MMC.usedBytes()) < 100e6){
+                char oldest_file[32];
+                getOldestFile(oldest_file, "/");
+                Serial.print("Less than 100MB left. Deleting File: ");
+                Serial.println(oldest_file);
+                deleteFile(oldest_file);
+            }
 
+            // copy timestamp into file string
+            char filename[13] = {"/YYYY_MM.CSV"};
+            memcpy(&filename[6], &meter_data.timestamp_str[3], 2);
+            memcpy(&filename[1], &meter_data.timestamp_str[6], 4);
+
+            // init logger
             ESPLogger logger(filename, SD_MMC);
             logger.setSizeLimit(80000000); //80MB max size, 1 month is about 65MB
             logger.setChunkSize(128);
 
+            // write header if file was just created (empty)
             if(logger.getSize() < 10){
+                Serial.println("Writing Header to new file");
                 logger.append("DATUM_ZEIT,U_L1,U_L2,U_L3,I_L1,I_L2,I_L3,COS(PHI),P_ZU,P_AB,E_ZU,E_AB,T,RH,WIFI_RSSI");
             }
 
             char record[128];
             sprintf(record, "%s,%.1f,%.1f,%.1f,%.2f,%.2f,%.2f,%.3f,%.1f,%.1f,%.0f,%.0f,%.2f,%.2f,%d", meter_data.timestamp_str, meter_data.voltage_l1, meter_data.voltage_l2, meter_data.voltage_l3, meter_data.current_l1, meter_data.current_l2, meter_data.current_l3, meter_data.cos_phi, meter_data.power_plus, meter_data.power_minus, meter_data.energy_plus, meter_data.energy_minus, meter_data.temperature, meter_data.humidity, meter_data.rssi);
-            // the second parameter allows to prepend to the record the current timestamp
             bool success = logger.append(record);
             if (success)
             {
@@ -495,13 +506,6 @@ void serial_dump()
     {
         Serial.printf("Psram: Not found.\r\n");
     }
-    // Filesystems
-    // if (filesystem && (SPIFFS.totalBytes() > 0)) {
-    //     Serial.printf("Spiffs: %i, used: %i\r\n", SPIFFS.totalBytes(), SPIFFS.usedBytes());
-    // } else {
-    //     Serial.printf("Spiffs: No filesystem found, please check your board configuration.\r\n");
-    //     Serial.printf("- Saving and restoring camera settings will not function without this.\r\n");
-    // }
     Serial.println();
     return;
 }
