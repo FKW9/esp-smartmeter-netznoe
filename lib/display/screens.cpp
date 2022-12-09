@@ -285,3 +285,76 @@ void Screen4()
 	etft.setCursor(27, 108);
 	etft.printf("WiFi Signal: %d dBm", last_meter_data.rssi);
 }
+
+void Screen5()
+{
+	etft.fillScreen(0xFFFF);
+
+	etft.drawRect(0, 0, 160, 20, 0x0861);
+	etft.fillRect(1, 1, 158, 18, 0x39C7);
+	etft.setTextColor(0xFFFF);
+	etft.setTTFFont(Arial_10_Bold);
+	etft.setCursor(15, 4);
+	etft.print(F(HEADER));
+
+	etft.drawRect(0, 19, 160, 27, 0x0000);
+	etft.fillRect(1, 20, 158, 25, 0x1A6F);
+	etft.setTextColor(0xE73C);
+	etft.setTTFFont(Arial_10_Bold);
+	etft.setCursor(30, 27);
+	etft.print(F("Einstellungen"));
+
+	etft.drawRect(0, 45, 160, 83, 0x0000);
+  	etft.fillRect(1, 46, 158, 81, 0x8D5B);
+
+	etft.setTextColor(0x0000);
+	etft.setTTFFont(Arial_10_Bold);
+	etft.setCursor(17, 54);
+	etft.print(F("Neustart"));
+
+	etft.setTextColor(0x0000);
+	etft.setTTFFont(Arial_10_Bold);
+	etft.setCursor(17, 78);
+	etft.print(F("Systeminfo"));
+
+	etft.setTextColor(0x0000);
+	etft.setTTFFont(Arial_10_Bold);
+	etft.setCursor(17, 102);
+	etft.print(F("Einst. Zurucksetzen"));
+
+	etft.fillTriangle(6, 62, 6, 55, 12, 59, 0x0000);
+}
+
+void Screen6()
+{
+	etft.fillScreen(0x0);
+	etft.setTextColor(0xFFFF);
+	etft.setTTFFont(Arial_8);
+	etft.setCursor(0, 0);
+
+	etft.printf("Name: %s\r\n", WiFi.getHostname());
+    etft.println("WiFi SSID: " + WiFi.SSID());
+	etft.printf("WiFi Signal: %d dBm\r\n", WiFi.RSSI());
+    etft.println("WiFi IP: " + WiFi.localIP().toString());
+	int64_t sec = esp_timer_get_time() / 1000000;
+    int64_t up_days = int64_t(floor(sec / 86400));
+    int up_hours = int64_t(floor(sec / 3600)) % 24;
+    int up_min = int64_t(floor(sec / 60)) % 60;
+    int up_sec = sec % 60;
+
+    etft.printf("Up Time: %" PRId64 ":%02i:%02i:%02i (d:h:m:s)\r\n", up_days, up_hours, up_min, up_sec);
+	if (SD_MMC.begin())
+    {
+        uint64_t cardSize = SD_MMC.cardSize() / (1024 * 1024);
+        etft.printf("Card Size: %lluMB\r\n", cardSize);
+        etft.printf("Total space: %lluMB\r\n", SD_MMC.totalBytes() / (1024 * 1024));
+        etft.printf("Used space: %lluMB\r\n", SD_MMC.usedBytes() / (1024 * 1024));
+    }
+    else
+    {
+        etft.println("SD Card: Not available\r\n");
+    }
+	etft.setTextColor(TFT_GREEN);
+	etft.setCursor(0, 120);
+	etft.print("Press NEXT to continue");
+}

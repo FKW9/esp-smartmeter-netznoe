@@ -25,7 +25,6 @@ uint16_t swap_uint16(uint16_t val);
 void serial_dump();
 
 // Variables for Logging
-// NOTE: the directories to the log file must exist!
 #ifdef SD_CARD_LOGGING
 uint8_t sd_available = 0;
 #endif
@@ -50,8 +49,8 @@ void setup()
     sd_available = setupSDCard();
     displaySDCardStatus();
 #endif
-    etft.print("Waiting for Data...");
-    delay(2000);
+    etft.printf("\nWaiting for Smartmeter Data...");
+    delay(4000);
 }
 
 // MAIN LOOP
@@ -62,6 +61,13 @@ void loop()
     displayUpdate();
 
     uint32_t current_time = millis();
+
+    if (Serial.available())
+    {
+        char c = Serial.read();
+        if (c == 'd') serial_dump();
+        if (c == 'r') ESP.restart();
+    }
 
     // Read while data is available
     while (Serial2.available())
@@ -433,7 +439,8 @@ void loop()
         if (sd_available)
         {
             // check for free space, if smaller than 100MB, delete old file
-            while((SD_MMC.totalBytes() - SD_MMC.usedBytes()) < 100e6){
+            while ((SD_MMC.totalBytes() - SD_MMC.usedBytes()) < 100e6)
+            {
                 char oldest_file[32];
                 getOldestFile(oldest_file, "/");
                 Serial.print("Less than 100MB left. Deleting File: ");
@@ -448,11 +455,12 @@ void loop()
 
             // init logger
             ESPLogger logger(filename, SD_MMC);
-            logger.setSizeLimit(80000000); //80MB max size, 1 month is about 65MB
+            logger.setSizeLimit(80000000); //80MB max size, 1 month is about 60MB
             logger.setChunkSize(128);
 
             // write header if file was just created (=empty)
-            if(logger.getSize() < 10){
+            if (logger.getSize() < 10)
+            {
                 Serial.println("Writing Header to new file");
                 logger.append("DATUM_ZEIT,U_L1,U_L2,U_L3,I_L1,I_L2,I_L3,COS(PHI),P_ZU,P_AB,E_ZU,E_AB,T,RH,WIFI_RSSI");
             }
@@ -472,13 +480,16 @@ void loop()
                     Serial.println("Something went wrong, record NOT stored!");
             }
         }
+        else
+        {
+            Serial.println("Data not stored. SD Card not available.");
+        }
 #endif
     }
 }
 
 void serial_dump()
 {
-
     uint32_t sketch_size = ESP.getSketchSize();
     uint32_t sketch_space = ESP.getFreeSketchSpace();
     String sketch_MD5 = ESP.getSketchMD5();
@@ -505,9 +516,27 @@ void serial_dump()
     }
     else
     {
-        Serial.printf("Psram: Not found.\r\n");
+        Serial.println("Psram: Not found");
     }
-    Serial.println();
+    if (SPIFFS.totalBytes() > 0)
+    {
+        Serial.printf("Spiffs: %i, used: %i\r\n", SPIFFS.totalBytes(), SPIFFS.usedBytes());
+    }
+    else
+    {
+        Serial.println("Spiffs: Not found");
+    }
+    if (sd_available)
+    {
+        uint64_t cardSize = SD_MMC.cardSize() / (1024 * 1024);
+        Serial.printf("Card Size: %lluMB\n", cardSize);
+        Serial.printf("Total space: %lluMB\n", SD_MMC.totalBytes() / (1024 * 1024));
+        Serial.printf("Used space: %lluMB\n", SD_MMC.usedBytes() / (1024 * 1024));
+    }
+    else
+    {
+        Serial.println("SD Card: Not available");
+    }
     return;
 }
 

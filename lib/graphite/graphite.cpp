@@ -22,22 +22,22 @@ void setupWiFi()
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_KEY);
 
-  etft.println("Connecting to:");
-  etft.println(WIFI_SSID);
+  etft.printf("Connecting to: %s ", WIFI_SSID);
 
   while (WiFi.status() != WL_CONNECTED)
   {
     etft.print(".");
 
-    delay(500);
+    delay(250);
     cnt++;
 
-    if (cnt > 20)
+    if (cnt > 40)
     {
       etft.println();
+      etft.setTextColor(TFT_RED);
       etft.println("Error connecting to WiFi! Restarting...");
       Serial.println("Error connecting to WiFi");
-      delay(1000);
+      delay(2000);
       ESP.restart();
     }
   }
@@ -45,10 +45,10 @@ void setupWiFi()
 
   if (!MDNS.begin(MDNS_HOSTNAME))
   {
-    // etft.println();
+    etft.setTextColor(TFT_RED);
     etft.println("Starting mDNS failed! Restarting...");
     Serial.println("Error starting mDNS");
-    delay(1000);
+    delay(2000);
     ESP.restart();
   }
 

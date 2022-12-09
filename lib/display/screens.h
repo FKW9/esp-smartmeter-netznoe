@@ -13,5 +13,7 @@ void Screen1();
 void Screen2();
 void Screen3();
 void Screen4();
+void Screen5();
+void Screen6();
 
 #endif

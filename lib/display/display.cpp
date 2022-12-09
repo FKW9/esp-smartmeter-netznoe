@@ -6,20 +6,23 @@ TFT_eSPI_ext etft = TFT_eSPI_ext(&tft);
 
 uint8_t current_screen = 0;
 uint8_t previous_screen = 0;
-uint8_t screens = 4;
+uint8_t screens = 5;
 uint8_t display_on = 1;
+uint8_t cursor_pos = 0;
 meterData last_meter_data;
 
 void ICACHE_RAM_ATTR buttonEnterPressed();
 void ICACHE_RAM_ATTR buttonNextPressed();
+void setNextCursor();
 
 void setupDisplay()
 {
 	etft.init();
 	etft.setRotation(1);
 	etft.fillScreen(TFT_BLACK);
-	etft.setTextColor(TFT_WHITE, TFT_BLACK);
-	etft.println("<<< INITIALIZING >>>");
+	etft.setTextColor(TFT_WHITE);
+	etft.setTTFFont(Arial_8);
+	etft.println("========INITIALIZING========");
 
 	// Button Pins
 	pinMode(33, INPUT_PULLUP);
@@ -30,18 +33,16 @@ void setupDisplay()
 
 void displaySDCardStatus()
 {
-	// etft.setCursor(1, 17);
-	// etft.setTextColor(TFT_BLACK);
-	// etft.fillRect(110, 17, 50, 7, TFT_WHITE);
 	uint64_t s = getFreeSDSpace();
 	if (s == 0)
 	{
 		etft.setTextColor(TFT_RED);
-		etft.println("NO SD CARD FOUND!");
+		etft.println("No SD Card found!");
+		etft.setTextColor(TFT_WHITE);
 	}
 	else
 	{
-		etft.printf("SD Free Space: ");
+		etft.printf("SD Card Free Space: ");
 		etft.printf("%lluMB\n", s);
 	}
 }
@@ -94,6 +95,14 @@ void displayUpdate(bool force)
 				Screen4();
 				break;
 
+			case 4:
+				if (!force) Screen5();
+				break;
+
+			case 5:
+				if (!force) Screen6();
+				break;
+
 			default:
 				break;
 			}
@@ -112,7 +121,32 @@ void ICACHE_RAM_ATTR buttonEnterPressed()
 	button_time = millis();
 	if (button_time - last_button_time > 400)
 	{
-		Serial.println("UP pressed");
+		if (current_screen == 4){
+			switch (cursor_pos)
+			{
+			case 0:
+				Serial2.end();
+				etft.fillScreen(0);
+				etft.setTextColor(0xFFFF);
+				etft.setCursor(0,0);
+				etft.setTTFFont(Arial_8);
+				etft.println("Restart manually executed...");
+				Serial.println("Restart manually executed...");
+				delay(3000);
+				WiFi.disconnect();
+				ESP.restart();
+				break;
+			case 1:
+				current_screen=5;
+				break;
+			case 2:
+				Serial.println("Reset");
+				break;
+
+			default:
+				break;
+			}
+		}
 		last_button_time = button_time;
 	}
 }
@@ -123,9 +157,21 @@ void ICACHE_RAM_ATTR buttonNextPressed()
 	if (button_time - last_button_time > 400)
 	{
 		if (display_on)
-			current_screen++;
+		{
+			if (current_screen != 4 || cursor_pos == 2)
+			{
+				current_screen++;
+				cursor_pos = 0;
+			}
+			else
+			{
+				setNextCursor();
+			}
+		}
 		else
+		{
 			current_screen = 0;
+		}
 
 		if (current_screen >= screens)
 			current_screen = 0;
@@ -146,4 +192,31 @@ void displayInactiveTimer()
 		display_on = 1;
 		digitalWrite(TFT_BL, TFT_BACKLIGHT_ON);
 	}
+}
+
+void setNextCursor()
+{
+	switch (cursor_pos)
+	{
+	case 0:
+		etft.fillTriangle(6, 62, 6, 55, 12, 59, 0x8D5B);
+		etft.fillTriangle(6, 86, 6, 79, 12, 83, 0x0000);
+		break;
+
+	case 1:
+		etft.fillTriangle(6, 86, 6, 79, 12, 83, 0x8D5B);
+		etft.fillTriangle(6, 110, 6, 103, 12, 107, 0x0000);
+		break;
+
+	case 2:
+		etft.fillTriangle(6, 110, 6, 103, 12, 107, 0x8D5B);
+		etft.fillTriangle(6, 62, 6, 55, 12, 59, 0x0000);
+		break;
+
+	default:
+		break;
+	}
+
+	if (++cursor_pos > 2)
+		cursor_pos = 0;
 }
