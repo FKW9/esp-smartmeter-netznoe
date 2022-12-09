@@ -19,5 +19,6 @@ void displayUpdate(bool force = false);
 void displayMeterData(meterData *data);
 void displayWiFiInfo();
 void displaySDCardStatus();
+void displayInactiveTimer();
 
 #endif

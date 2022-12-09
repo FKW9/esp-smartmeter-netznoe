@@ -58,6 +58,7 @@ void setup()
 void loop()
 {
     checkWiFiConnection();
+    displayInactiveTimer();
     displayUpdate();
 
     uint32_t current_time = millis();
@@ -431,7 +432,7 @@ void loop()
 #ifdef SD_CARD_LOGGING
         if (sd_available)
         {
-            // check for free space, if smaller than 150MB, delete old file
+            // check for free space, if smaller than 100MB, delete old file
             while((SD_MMC.totalBytes() - SD_MMC.usedBytes()) < 100e6){
                 char oldest_file[32];
                 getOldestFile(oldest_file, "/");
@@ -450,7 +451,7 @@ void loop()
             logger.setSizeLimit(80000000); //80MB max size, 1 month is about 65MB
             logger.setChunkSize(128);
 
-            // write header if file was just created (empty)
+            // write header if file was just created (=empty)
             if(logger.getSize() < 10){
                 Serial.println("Writing Header to new file");
                 logger.append("DATUM_ZEIT,U_L1,U_L2,U_L3,I_L1,I_L2,I_L3,COS(PHI),P_ZU,P_AB,E_ZU,E_AB,T,RH,WIFI_RSSI");

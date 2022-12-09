@@ -46,7 +46,7 @@ uint64_t getFreeSDSpace(void)
 }
 
 /**
- * @brief Get the Oldest File. Each file is in the format "/YYYY_MM.CSV"
+ * @brief Get the Oldest File. Each file must be in the format "/YYYY_MM.CSV"
  *
  * @param oldest_file char array in which the oldest file path is stored
  * @param dir directory to search in
@@ -104,11 +104,7 @@ uint8_t getOldestFile(char *oldest_file, const char *dir)
 void deleteFile(const char *path)
 {
 	if (SD_MMC.remove(path))
-	{
 		Serial.println("File deleted");
-	}
 	else
-	{
 		Serial.println("Delete failed");
-	}
 }

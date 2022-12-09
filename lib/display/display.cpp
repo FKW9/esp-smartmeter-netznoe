@@ -7,6 +7,7 @@ TFT_eSPI_ext etft = TFT_eSPI_ext(&tft);
 uint8_t current_screen = 0;
 uint8_t previous_screen = 0;
 uint8_t screens = 4;
+uint8_t display_on = 1;
 meterData last_meter_data;
 
 void ICACHE_RAM_ATTR buttonEnterPressed();
@@ -69,31 +70,36 @@ void displayMeterData(meterData *data)
 	displayUpdate(true);
 }
 
-void displayUpdate(bool force){
-	if((current_screen != previous_screen) || force){
-		switch (current_screen)
+void displayUpdate(bool force)
+{
+	if (display_on)
+	{
+		if ((current_screen != previous_screen) || force)
 		{
-		case 0:
-			Screen1();
-			break;
+			switch (current_screen)
+			{
+			case 0:
+				Screen1();
+				break;
 
-		case 1:
-			Screen2();
-			break;
+			case 1:
+				Screen2();
+				break;
 
-		case 2:
-			Screen3();
-			break;
+			case 2:
+				Screen3();
+				break;
 
-		case 3:
-			Screen4();
-			break;
+			case 3:
+				Screen4();
+				break;
 
-		default:
-			break;
+			default:
+				break;
+			}
+			if (!force)
+				previous_screen = current_screen;
 		}
-		if(!force)
-			previous_screen = current_screen;
 	}
 }
 
@@ -116,10 +122,28 @@ void ICACHE_RAM_ATTR buttonNextPressed()
 	button_time = millis();
 	if (button_time - last_button_time > 400)
 	{
-		current_screen++;
-		if(current_screen >= screens)
+		if (display_on)
+			current_screen++;
+		else
+			current_screen = 0;
+
+		if (current_screen >= screens)
 			current_screen = 0;
 
 		last_button_time = button_time;
+	}
+}
+
+void displayInactiveTimer()
+{
+	if (millis() - last_button_time > 120e3)
+	{
+		display_on = 0;
+		digitalWrite(TFT_BL, !TFT_BACKLIGHT_ON);
+	}
+	else if (digitalRead(TFT_BL) != TFT_BACKLIGHT_ON)
+	{
+		display_on = 1;
+		digitalWrite(TFT_BL, TFT_BACKLIGHT_ON);
 	}
 }
