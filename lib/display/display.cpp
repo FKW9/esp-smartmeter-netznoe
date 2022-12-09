@@ -10,19 +10,20 @@ uint8_t screens = 5;
 uint8_t display_on = 1;
 uint8_t cursor_pos = 0;
 meterData last_meter_data;
+bool config_update = false;
 
 void ICACHE_RAM_ATTR buttonEnterPressed();
 void ICACHE_RAM_ATTR buttonNextPressed();
 void setNextCursor();
 
-void setupDisplay()
+void displaySetup()
 {
 	etft.init();
 	etft.setRotation(1);
 	etft.fillScreen(TFT_BLACK);
 	etft.setTextColor(TFT_WHITE);
 	etft.setTTFFont(Arial_8);
-	etft.println("========INITIALIZING========");
+	etft.println("=======INITIALISIEREN=======");
 
 	// Button Pins
 	pinMode(33, INPUT_PULLUP);
@@ -37,13 +38,13 @@ void displaySDCardStatus()
 	if (s == 0)
 	{
 		etft.setTextColor(TFT_RED);
-		etft.println("No SD Card found!");
+		etft.println("Keine SD Karte gefunden!");
 		etft.setTextColor(TFT_WHITE);
 	}
 	else
 	{
-		etft.printf("SD Card Free Space: ");
-		etft.printf("%lluMB\n", s);
+		etft.printf("SD Karte: ");
+		etft.printf("%lluMB frei\n", s);
 	}
 }
 
@@ -53,7 +54,7 @@ void displayWiFiInfo()
 	if (WiFi.isConnected())
 	{
 		etft.setTextColor(TFT_GREEN);
-		etft.println("Connected");
+		etft.println("Verbunden");
 		etft.setTextColor(TFT_WHITE);
 		etft.printf("IP: %s\n", WiFi.localIP().toString().c_str());
 		etft.printf("Signal: %ddBm\n", WiFi.RSSI());
@@ -61,7 +62,7 @@ void displayWiFiInfo()
 	else
 	{
 		etft.setTextColor(TFT_RED);
-		etft.println("Not Connected");
+		etft.println("Nicht verbunden");
 	}
 }
 
@@ -73,7 +74,7 @@ void displayMeterData(meterData *data)
 
 void displayUpdate(bool force)
 {
-	if (display_on)
+	if (display_on && !config_update)
 	{
 		if ((current_screen != previous_screen) || force)
 		{
@@ -110,6 +111,7 @@ void displayUpdate(bool force)
 				previous_screen = current_screen;
 		}
 	}
+
 }
 
 //variables to keep track of the timing of recent interrupts
@@ -140,7 +142,11 @@ void ICACHE_RAM_ATTR buttonEnterPressed()
 				current_screen=5;
 				break;
 			case 2:
-				Serial.println("Reset");
+				etft.fillScreen(0);
+				etft.setTextColor(0xFFFF);
+				etft.setCursor(0,0);
+				etft.setTTFFont(Arial_8);
+				config_update = true;
 				break;
 
 			default:

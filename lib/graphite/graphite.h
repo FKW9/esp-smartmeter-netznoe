@@ -1,6 +1,10 @@
-#include <Arduino.h>
-#include <ArduinoOTA.h>
-#include <ESPmDNS.h>
+#ifndef GRAPHITE_H_
+#define GRAPHITE_H_
+
+#include "../../config.h"
+
+#ifdef USE_GRAPHITE
+
 #include <WiFi.h>
 
 #ifdef TEST_SETUP
@@ -35,6 +39,7 @@
     #define GRAPHITE_RH 					"smartmeter.data.pcb_rh"
 #endif
 
-void setupWiFi();
-void checkWiFiConnection();
 void submitToGraphite(time_t unix_timestamp, String metrics, float value);
+
+#endif
+#endif

@@ -320,7 +320,7 @@ void Screen5()
 	etft.setTextColor(0x0000);
 	etft.setTTFFont(Arial_10_Bold);
 	etft.setCursor(17, 102);
-	etft.print(F("Einst. Zurucksetzen"));
+	etft.print(F("Einstellungen"));
 
 	etft.fillTriangle(6, 62, 6, 55, 12, 59, 0x0000);
 }

@@ -2,12 +2,16 @@
 #include <mbedtls/gcm.h>
 #include "dlms.h"
 #include "obis.h"
-#include "graphite.h"
 #include "display.h"
 #include "hte501.h"
 #include "sdcard.h"
 #include "ESPLogger.h"
-#include "../config.h"
+#include "setup.h"
+#include "../key.h"
+
+#ifdef USE_GRAPHITE
+    #include "graphite.h"
+#endif
 
 // Variables for DLMS decoding
 uint32_t last_read = 0;                      // Timestamp when data was last read
@@ -32,7 +36,7 @@ uint8_t sd_available = 0;
 // SETUP
 void setup()
 {
-    setupDisplay();
+    displaySetup();
     setupSensor();
     startPeriodicMeasurement();
 
@@ -49,7 +53,7 @@ void setup()
     sd_available = setupSDCard();
     displaySDCardStatus();
 #endif
-    etft.printf("\nWaiting for Smartmeter Data...");
+    etft.printf("\nWarte auf Smartmeter Daten...");
     delay(4000);
 }
 
@@ -60,13 +64,22 @@ void loop()
     displayInactiveTimer();
     displayUpdate();
 
+    if (config_update)
+    {
+        // blocking
+        startConfigAP(true);
+        config_update = false;
+    }
+
     uint32_t current_time = millis();
 
     if (Serial.available())
     {
         char c = Serial.read();
-        if (c == 'd') serial_dump();
-        if (c == 'r') ESP.restart();
+        if (c == 'd')
+            serial_dump();
+        if (c == 'r')
+            ESP.restart();
     }
 
     // Read while data is available
@@ -416,6 +429,7 @@ void loop()
         }
 
         // send the data
+#ifdef USE_GRAPHITE
         submitToGraphite(meter_data.timestamp_unix, GRAPHITE_VOLTAGE_L1, meter_data.voltage_l1);
         submitToGraphite(meter_data.timestamp_unix, GRAPHITE_VOLTAGE_L2, meter_data.voltage_l2);
         submitToGraphite(meter_data.timestamp_unix, GRAPHITE_VOLTAGE_L3, meter_data.voltage_l3);
@@ -430,6 +444,7 @@ void loop()
         submitToGraphite(meter_data.timestamp_unix, GRAPHITE_T, meter_data.temperature);
         submitToGraphite(meter_data.timestamp_unix, GRAPHITE_RH, meter_data.humidity);
         submitToGraphite(meter_data.timestamp_unix, GRAPHITE_RSSI, meter_data.rssi);
+#endif
 
         // update the display
         displayMeterData(&meter_data);
@@ -449,6 +464,7 @@ void loop()
             }
 
             // copy timestamp into file string
+            // creates new file every month
             char filename[13] = {"/YYYY_MM.CSV"};
             memcpy(&filename[6], &meter_data.timestamp_str[3], 2);
             memcpy(&filename[1], &meter_data.timestamp_str[6], 4);
@@ -498,7 +514,7 @@ void serial_dump()
     float sketchPct = 100 * sketch_size / sketch_space;
     Serial.printf("Sketch Size: %i (total: %i, %.1f%% used)\r\n", sketch_size, sketch_space, sketchPct);
     Serial.printf("ESP sdk: %s\r\n", ESP.getSdkVersion());
-    Serial.printf("WiFi SSID: %s\r\n", WIFI_SSID);
+    Serial.println("WiFi SSID: " + WiFi.SSID());
     Serial.println("WiFi IP address: " + WiFi.localIP().toString());
 
     int64_t sec = esp_timer_get_time() / 1000000;
@@ -518,7 +534,7 @@ void serial_dump()
     {
         Serial.println("Psram: Not found");
     }
-    if (SPIFFS.totalBytes() > 0)
+    if (SPIFFS.begin())
     {
         Serial.printf("Spiffs: %i, used: %i\r\n", SPIFFS.totalBytes(), SPIFFS.usedBytes());
     }
