@@ -68,8 +68,9 @@ uint8_t getOldestFile(char *oldest_file, const char *dir)
 
 	char m_buf[3];
 	char y_buf[5];
-
 	int cmonth, cyear, month, year;
+	cyear = 9999;
+	cmonth = 99;
 
 	File file = root.openNextFile();
 
@@ -85,16 +86,12 @@ uint8_t getOldestFile(char *oldest_file, const char *dir)
 			memcpy(&m_buf[0], &file.name()[6], 2);
 			sscanf(m_buf, "%d", &month);
 
-			// year and month of current saved file
-			memcpy(&y_buf[0], &oldest_file[1], 4);
-			sscanf(y_buf, "%d", &cyear);
-			memcpy(&m_buf[0], &oldest_file[6], 2);
-			sscanf(m_buf, "%d", &cmonth);
-
-			if (year < cyear)
+			if ((year < cyear) || (year == cyear && month <= cmonth))
+			{
 				strcpy(oldest_file, file.name());
-			else if (year == cyear && month <= cmonth)
-				strcpy(oldest_file, file.name());
+				cyear = year;
+				cmonth = month;
+			}
 		}
 		file = root.openNextFile();
 	}
