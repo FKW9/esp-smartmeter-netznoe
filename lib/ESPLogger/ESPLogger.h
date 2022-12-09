@@ -22,107 +22,108 @@
 
 #include <FS.h>
 
-class ESPLogger {
+class ESPLogger
+{
 public:
-  typedef bool (*CallbackFlush)(const char *buffer, int n);
+	typedef bool (*CallbackFlush)(const char *buffer, int n);
 
-  ESPLogger(String file, fs::FS &fs);
+	ESPLogger(String file, fs::FS &fs);
 
-  virtual ~ESPLogger(){};
+	virtual ~ESPLogger(){};
 
-  /**
+	/**
    * Check the logger configuration.
    * Return true if logger can start, false otherwise.
    */
-  virtual bool begin();
+	virtual bool begin();
 
-  /**
+	/**
    * Set the limit of the log size.
    * @param strict if true, guarantees that the current log size never exceeds the max size
    * (e.g. currentLogSize <= size); if false, it can exceed the limit by the record size
    * (e.g. currentLogSize <= size + recordSize)
    */
-  void setSizeLimit(unsigned int size, bool strict = true);
+	void setSizeLimit(unsigned int size, bool strict = true);
 
-  /**
+	/**
    * Get maximum log size.
    */
-  unsigned int getSizeLimit() const;
+	unsigned int getSizeLimit() const;
 
-  /**
+	/**
    * Set the amount of bytes allocated for a chunk. If your project consumes
    * an important amount of RAM, you may consider to reduce this value.
    */
-  void setChunkSize(unsigned int size);
+	void setChunkSize(unsigned int size);
 
-  /**
+	/**
    * Sets if the logger must prepare single-record chunks.
    */
-  void setOneRecordPerChunk(bool one);
+	void setOneRecordPerChunk(bool one);
 
-  /**
+	/**
    * Sets the callback used during the flushing.
    */
-  void setFlushCallback(CallbackFlush callback);
+	void setFlushCallback(CallbackFlush callback);
 
-  /**
+	/**
    * Append a record to the log file. This method is zero-copy.
    * Return true if the record is successfully stored, otherwise false.
    */
-  bool append(const String &record, bool timestamp = false);
-  virtual bool append(const char *record, bool timestamp = false);
+	bool append(const String &record, bool timestamp = false);
+	virtual bool append(const char *record, bool timestamp = false);
 
-  /**
+	/**
    * Send all the data through the callback function.
    */
-  virtual bool flush();
+	virtual bool flush();
 
-  /**
+	/**
    * Delete the current log file.
    */
-  virtual void reset();
+	virtual void reset();
 
-  /**
+	/**
    * Print the log content on Serial port. It doesn't delete any record.
    */
-  virtual void print() const;
+	virtual void print() const;
 
-  /**
+	/**
    * Get current log size.
    */
-  virtual unsigned int getSize() const;
+	virtual unsigned int getSize() const;
 
-  /**
+	/**
    * Tell if the log is full.
    */
-  virtual bool isFull() const;
+	virtual bool isFull() const;
 
 protected:
-  String filePath;
-  fs::FS &fs;
+	String filePath;
+	fs::FS &fs;
 
-  /**
+	/**
    * Maximum dimension of log size. It includes the terminator chars.
    */
-  unsigned int sizeLimit;
+	unsigned int sizeLimit;
 
-  /**
+	/**
    * Strict limit with respect to the file dimension.
    */
-  bool strictLimit;
+	bool strictLimit;
 
-  /**
+	/**
    * Dimension of a chunk, in bytes.
    * This limit is ALWAYS strict and includes the terminator chars.
    */
-  unsigned int chunkSize;
+	unsigned int chunkSize;
 
-  /**
+	/**
    * Tell if the logger shoud prepare chunks with at most one record.
    */
-  bool oneRecordPerChunk;
+	bool oneRecordPerChunk;
 
-  /**
+	/**
    * Callback called during the flushing. The first parameter is the chuck of records
    * separated by '\0' char. The second parameter is the content's length, '\0' included.
    *
@@ -130,32 +131,33 @@ protected:
    * True means that the chunk was correctly flushed and the process can continue;
    * false means that there was an error, so flush process must stop.
    */
-  CallbackFlush onFlush;
+	CallbackFlush onFlush;
 
-  bool full;
+	bool full;
 
-  /**
+	/**
    * Enumeration to classify the message's severity.
    */
-  enum class DebugLevel {
-    QUIET = 0,
-    FATAL = 1,
-    ERROR = 2,
-    WARN = 3,
-    INFO = 4,
-    DEBUG = 5,
-    TRACE = 6
-  };
+	enum class DebugLevel
+	{
+		QUIET = 0,
+		FATAL = 1,
+		ERROR = 2,
+		WARN = 3,
+		INFO = 4,
+		DEBUG = 5,
+		TRACE = 6
+	};
 
-  /**
+	/**
    * Translate the enum value to a human-friendly string.
    */
-  static const char *translate(DebugLevel level);
+	static const char *translate(DebugLevel level);
 
-  /**
+	/**
    * Debug level.
    */
-  static const DebugLevel debugVerbosity = DebugLevel::QUIET;
+	static const DebugLevel debugVerbosity = DebugLevel::QUIET;
 };
 
-#endif  // END ESPLOGGER_H
+#endif // END ESPLOGGER_H
