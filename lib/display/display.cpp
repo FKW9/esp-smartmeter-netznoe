@@ -226,3 +226,11 @@ void setNextCursor()
 	if (++cursor_pos > 2)
 		cursor_pos = 0;
 }
+
+void displayResetTextSettings(){
+	digitalWrite(TFT_BL, TFT_BACKLIGHT_ON);
+	etft.fillScreen(0x0);
+	etft.setCursor(0, 0);
+	etft.setTextColor(TFT_WHITE);
+	etft.setTTFFont(Arial_8);
+}

@@ -7,6 +7,8 @@ void startConfigAP(bool force)
     wm.setClass("invert");
     wm.setShowStaticFields(true);
     wm.setShowInfoErase(true);
+    wm.setConnectTimeout(30);
+    wm.setConnectRetries(10);
     // wm.setShowDnsFields(true);
 
     if (wm.getWiFiIsSaved() && !force)
@@ -81,9 +83,12 @@ void checkWiFiConnection()
     ArduinoOTA.handle();
     if (WiFi.status() != WL_CONNECTED)
     {
+        displayResetTextSettings();
+        etft.setTextColor(TFT_RED);
+        etft.println("Connection lost!");
+        etft.setTextColor(TFT_WHITE);
         WiFi.disconnect();
         yield();
-        etft.fillScreen(0x0);
         setupWiFi();
     }
 }
