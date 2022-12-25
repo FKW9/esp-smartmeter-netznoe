@@ -323,7 +323,7 @@ void handleUpload(AsyncWebServerRequest *request, String filename, size_t index,
 }
 
 void stopFileserver(){
-	Serial.println("Stoping Fileserver")
+	Serial.println("Stopping Fileserver");
 	server->reset();
 	server->end();
 }

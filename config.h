@@ -1,5 +1,5 @@
 // WiFi Hostname
-#define HOSTNAME "Smartmeter"
+#define HOSTNAME "FakeSmartmeter"
 
 // Comment out next line to disable SD Card logging
 #define SD_CARD_LOGGING
