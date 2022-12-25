@@ -2,6 +2,7 @@
 #define HOSTNAME "FakeSmartmeter"
 
 // Comment out next line to disable SD Card logging
+// Also disables the Fileserver
 #define SD_CARD_LOGGING
 
 // Comment out next line to disable Graphite logging
