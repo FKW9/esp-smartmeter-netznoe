@@ -21,7 +21,7 @@
 - [WiFi Manager](https://github.com/tzapu/WiFiManager) zum bequemen Aufsetzen
 ---
 ## Bekannte Probleme
-- Leistungsfaktor ist teils unglaubwürdig, siehe dazu Issue #7
+- Leistungsfaktor ist teils unglaubwürdig, siehe dazu [Issue #7](https://github.com/FKW9/esp-smartmeter-netznoe/issues/7)
 ---
 ## Software Installation
 Das Projekt wurde in PlatformIO entwickelt. Um es zu kompilieren, bitte Einstellungen in [**```platformio.ini```**](platformio.ini) übernehmen.
