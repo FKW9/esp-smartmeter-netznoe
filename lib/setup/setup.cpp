@@ -28,7 +28,8 @@ void startConfigAP(bool force)
     {
         Serial.println("Starting config portal");
         wm.setConfigPortalTimeout(120);
-        if (!wm.startConfigPortal(HOSTNAME)) {
+        if (!wm.startConfigPortal(HOSTNAME))
+        {
             etft.setTextColor(TFT_RED);
             etft.println("Error connecting or timeout! Restarting...");
             Serial.println("Failed to connect or hit timeout");
@@ -48,7 +49,7 @@ void startConfigAP(bool force)
 }
 
 /**
- * @brief Connect to WiFi, start MDN Service and init OTA
+ * @brief Connect to WiFi, start MDN Service, start WifiManager, init OTA
  */
 void setupWiFi()
 {

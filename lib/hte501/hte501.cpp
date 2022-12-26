@@ -1,7 +1,6 @@
-#include <Wire.h>
 #include "hte501.h"
 
-unsigned char CMD_SINGLE_SHOT[]    = {0x2C, 0x1B};
+unsigned char CMD_SINGLE_SHOT[] = {0x2C, 0x1B};
 unsigned char CMD_PERIODIC_READY[] = {0xF3, 0x52};
 unsigned char CMD_PERIODIC_START[] = {0x20, 0x1E};
 unsigned char CMD_PERIODIC_FETCH[] = {0xE0, 0x00};

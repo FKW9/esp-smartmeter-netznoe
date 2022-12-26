@@ -305,7 +305,7 @@ void Screen5()
 	etft.print(F("Einstellungen"));
 
 	etft.drawRect(0, 45, 160, 83, 0x0000);
-  	etft.fillRect(1, 46, 158, 81, 0x8D5B);
+	etft.fillRect(1, 46, 158, 81, 0x8D5B);
 
 	etft.setTextColor(0x0000);
 	etft.setTTFFont(Arial_10_Bold);
@@ -333,27 +333,27 @@ void Screen6()
 	etft.setCursor(0, 0);
 
 	etft.printf("Name: %s\r\n", WiFi.getHostname());
-    etft.println("WiFi SSID: " + WiFi.SSID());
+	etft.println("WiFi SSID: " + WiFi.SSID());
 	etft.printf("WiFi Signal: %d dBm\r\n", WiFi.RSSI());
-    etft.println("WiFi IP: " + WiFi.localIP().toString());
+	etft.println("WiFi IP: " + WiFi.localIP().toString());
 	int64_t sec = esp_timer_get_time() / 1000000;
-    int64_t up_days = int64_t(floor(sec / 86400));
-    int up_hours = int64_t(floor(sec / 3600)) % 24;
-    int up_min = int64_t(floor(sec / 60)) % 60;
-    int up_sec = sec % 60;
+	int64_t up_days = int64_t(floor(sec / 86400));
+	int up_hours = int64_t(floor(sec / 3600)) % 24;
+	int up_min = int64_t(floor(sec / 60)) % 60;
+	int up_sec = sec % 60;
 
-    etft.printf("Up Time: %" PRId64 ":%02i:%02i:%02i (d:h:m:s)\r\n", up_days, up_hours, up_min, up_sec);
+	etft.printf("Up Time: %" PRId64 ":%02i:%02i:%02i (d:h:m:s)\r\n", up_days, up_hours, up_min, up_sec);
 	if (SD_MMC.begin())
-    {
-        uint64_t cardSize = SD_MMC.cardSize() / (1024 * 1024);
-        etft.printf("Card Size: %lluMB\r\n", cardSize);
-        etft.printf("Total space: %lluMB\r\n", SD_MMC.totalBytes() / (1024 * 1024));
-        etft.printf("Used space: %lluMB\r\n", SD_MMC.usedBytes() / (1024 * 1024));
-    }
-    else
-    {
-        etft.println("SD Card: Not available\r\n");
-    }
+	{
+		uint64_t cardSize = SD_MMC.cardSize() / (1024 * 1024);
+		etft.printf("Card Size: %lluMB\r\n", cardSize);
+		etft.printf("Total space: %lluMB\r\n", SD_MMC.totalBytes() / (1024 * 1024));
+		etft.printf("Used space: %lluMB\r\n", SD_MMC.usedBytes() / (1024 * 1024));
+	}
+	else
+	{
+		etft.println("SD Card: Not available\r\n");
+	}
 	etft.setTextColor(TFT_GREEN);
 	etft.setCursor(0, 120);
 	etft.print("Press NEXT to continue");

@@ -9,7 +9,7 @@
 #include "../sdcard/sdcard.h"
 #include "../../src/obis.h"
 
-extern TFT_eSPI tft;  // Invoke library, pins defined in User_Setup.h
+extern TFT_eSPI tft; // Invoke library, pins defined in User_Setup.h
 extern TFT_eSPI_ext etft;
 
 extern meterData last_meter_data;

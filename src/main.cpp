@@ -73,14 +73,14 @@ void loop()
     if (config_update)
     {
         config_update = false;
-        // blocking
-		#ifdef SD_CARD_LOGGING
-			stopFileserver();
-        	startConfigAP(true);
-			setupFileserver();
-		#else
-			startConfigAP(true);
-		#endif
+// blocking
+#ifdef SD_CARD_LOGGING
+        stopFileserver();
+        startConfigAP(true);
+        setupFileserver();
+#else
+        startConfigAP(true);
+#endif
     }
 
     uint32_t current_time = millis();
@@ -356,6 +356,7 @@ void loop()
                 }
                 break;
 
+            case DATA_LONG:
             case DATA_LONG_UNSIGNED:
                 obis_data_length = 2;
 

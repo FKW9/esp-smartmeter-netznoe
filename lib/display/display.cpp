@@ -97,11 +97,13 @@ void displayUpdate(bool force)
 				break;
 
 			case 4:
-				if (!force) Screen5();
+				if (!force)
+					Screen5();
 				break;
 
 			case 5:
-				if (!force) Screen6();
+				if (!force)
+					Screen6();
 				break;
 
 			default:
@@ -111,7 +113,6 @@ void displayUpdate(bool force)
 				previous_screen = current_screen;
 		}
 	}
-
 }
 
 //variables to keep track of the timing of recent interrupts
@@ -123,14 +124,15 @@ void ICACHE_RAM_ATTR buttonEnterPressed()
 	button_time = millis();
 	if (button_time - last_button_time > 400)
 	{
-		if (current_screen == 4){
+		if (current_screen == 4)
+		{
 			switch (cursor_pos)
 			{
 			case 0:
 				Serial2.end();
 				etft.fillScreen(0);
 				etft.setTextColor(0xFFFF);
-				etft.setCursor(0,0);
+				etft.setCursor(0, 0);
 				etft.setTTFFont(Arial_8);
 				etft.println("Restart manually executed...");
 				Serial.println("Restart manually executed...");
@@ -139,12 +141,12 @@ void ICACHE_RAM_ATTR buttonEnterPressed()
 				ESP.restart();
 				break;
 			case 1:
-				current_screen=5;
+				current_screen = 5;
 				break;
 			case 2:
 				etft.fillScreen(0);
 				etft.setTextColor(0xFFFF);
-				etft.setCursor(0,0);
+				etft.setCursor(0, 0);
 				etft.setTTFFont(Arial_8);
 				config_update = true;
 				break;
@@ -227,7 +229,8 @@ void setNextCursor()
 		cursor_pos = 0;
 }
 
-void displayResetTextSettings(){
+void displayResetTextSettings()
+{
 	digitalWrite(TFT_BL, TFT_BACKLIGHT_ON);
 	etft.fillScreen(0x0);
 	etft.setCursor(0, 0);

@@ -1,5 +1,9 @@
 // WiFi Hostname
-#define HOSTNAME "FakeSmartmeter"
+#ifdef TEST_SETUP
+    #define HOSTNAME "FakeSmartmeter"
+#else
+    #define HOSTNAME "Smartmeter"
+#endif
 
 // Comment out next line to disable SD Card logging
 // Also disables the Fileserver

@@ -1,6 +1,8 @@
 #ifndef HTE501_H_
 #define HTE501_H_
 
+#include <Wire.h>
+
 #define HTE_ADDRESS 0x40
 
 void setupSensor(void);
