@@ -10,3 +10,4 @@ config.h
 .vscode/extensions.json
 python
 .vscode/extensions.json
+pptx_to_code
