@@ -1,3 +1,6 @@
+#ifndef OBIS_H_
+#define OBIS_H_
+
 #include <inttypes.h>
 
 // Scaling
@@ -8,6 +11,7 @@
 // Data types as per specification
 #define DATA_NULL                   0x00
 #define DATA_OCTET_STRING           0x09
+#define DATA_LONG                   0x10
 #define DATA_LONG_UNSIGNED          0x12
 #define DATA_LONG_DOUBLE_UNSIGNED   0x06
 
@@ -77,3 +81,24 @@ static const uint8_t OBIS_ACTIVE_ENERGY_PLUS[] {
 static const uint8_t OBIS_ACTIVE_ENERGY_MINUS[] {
     0x02, 0x08 // 1.0.2.8.0.255
 };
+
+typedef struct MeterData {
+    char timestamp_str[21];
+    time_t timestamp_unix;
+    float voltage_l1;
+    float voltage_l2;
+    float voltage_l3;
+    float current_l1;
+    float current_l2;
+    float current_l3;
+    float cos_phi;
+    float power_plus;
+    float power_minus;
+    float energy_plus;
+    float energy_minus;
+    float temperature;
+    float humidity;
+    int8_t rssi;
+} meterData;
+
+#endif
