@@ -1,16 +1,17 @@
 # ESP32 Smartmeter Logger für P1 Kundenschnittstelle
 <img src="pictures/smartmeter.png"/>
+Musste mich gegen ein DIN-Hutschienengehäuse entscheiden, da in meinem Schaltschrank kein Platz mehr war...
 
 ## Quellen
  - DLMS Entschlüsselung: [esphome-dlms-meter](https://github.com/DomiStyle/esphome-dlms-meter)
  - Datenlogger: [ESPLogger](https://github.com/fabianoriccardi/ESPLogger)
  - Fileserver: [esp32-asyncwebserver-fileupload](https://github.com/smford/esp32-asyncwebserver-fileupload-example)
  - weitere siehe [platformio.ini](/platformio.ini)
----
+
 ## Unterstützte Smartmeter
 - Kaifa MA309M
 - Sagecom T210-D (getestet von [SebTrax](https://github.com/SebTrax))
----
+
 ## Features
 - Lest alle verfügbaren OBIS Daten von der Kundenschnittstelle P1 aus
 - Speichert alle Daten auf einer SD-Karte im CSV Format ab
@@ -19,10 +20,14 @@
 - On-board [Feuchte und Temperatursensor](https://github.com/epluse/HTE501_i2c_arduino)
 - TFT Display auf dem aktuelle Werte zu sehen sind, welches sich automatisch nach 2 Minuten inaktivität ausschaltet.
 - [WiFi Manager](https://github.com/tzapu/WiFiManager) zum bequemen Aufsetzen
----
+
+## Allgemeines
+Zunächst muss der Entschlüsselungscode angefordert werden. Für Niederösterreich E-Mail an: [smartmeter@netz-noe.at](mailto:smartmeter@netz-noe.at)
+
+Information zur Kundenschnittstelle (netz-nö) sind hier zu finden: [www.netz-noe.at/SmartMeter_Kundenschnittstelle_lektoriert.aspx](https://www.netz-noe.at/Download-(1)/Smart-Meter/218_9_SmartMeter_Kundenschnittstelle_lektoriert_14.aspx).
 ## Bekannte Probleme
-- Leistungsfaktor ist teils unglaubwürdig, siehe dazu [Issue #7](https://github.com/FKW9/esp-smartmeter-netznoe/issues/7)
----
+Leistungsfaktor ist teils unglaubwürdig, siehe dazu [Issue #7](https://github.com/FKW9/esp-smartmeter-netznoe/issues/7)
+
 ## Software Installation
 Das Projekt wurde in PlatformIO entwickelt. Um es zu kompilieren, bitte Einstellungen in [**```platformio.ini```**](platformio.ini) übernehmen.
 
@@ -44,7 +49,7 @@ siehe [**```lib/display/README.md```**](lib/display/README.md)
 ### Test Setup
 In [platformio.ini](/platformio.ini) kann das Flag ```TEST_SETUP``` verwendet werden, um ohne Smartmeter die Funktionalität zu überprüfen. Dazu muss **mein** Schlüssel in [key.h](/key.h) verwendet werden.
 
----
+
 ## Flowchart
 ```mermaid
 flowchart LR
@@ -57,7 +62,7 @@ flowchart LR
    end
    ESP32-- display -->e[TFT Display]
 ```
----
+
 ## Hardware
 Für eine simplere Hardware Version siehe [Release V0.1](https://github.com/FKW9/esp-smartmeter-netznoe/tree/V0.1).
 
