@@ -4,5 +4,6 @@
 - [ ] Logging über Loki
 - [ ] Bessere Code-Strukturierung
 - [ ] Logging Daten auf FTP Server schicken
+- [ ] ESP Tasks verwenden!!
 
 ... u. V. m
