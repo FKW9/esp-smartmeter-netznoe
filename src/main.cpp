@@ -506,7 +506,7 @@ void loop()
             logger.setChunkSize(128);
 
             // write header if file was just created (=empty)
-            if (logger.getSize() < 10)
+            if (logger.getSize() < 5)
             {
                 Serial.println("Writing Header to new file");
                 logger.append("DATUM_ZEIT;U_L1;U_L2;U_L3;I_L1;I_L2;I_L3;COS(PHI);P_ZU;P_AB;E_ZU;E_AB;T;RH;RSSI");
