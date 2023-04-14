@@ -130,6 +130,13 @@ void loop()
             return;
         }
 
+#ifdef DEBUG_OUTPUT
+        for (int i = 0; i < 256; i++)
+        {
+            Serial.printf("%02X", receive_buffer[i]);
+        }
+#endif
+
         /**
 		 * @TODO: ADD ROUTINE TO DETERMINE PAYLOAD LENGTHS AUTOMATICALLY
 		 */
@@ -162,6 +169,13 @@ void loop()
             return;
         }
 
+#ifdef DEBUG_OUTPUT
+        for (int i = 0; i < payload_length; i++)
+        {
+            Serial.printf("%02X", plaintext[i]);
+        }
+#endif
+
         // Decode data
         uint16_t current_position = DECODER_START_OFFSET;
         meterData meter_data;
@@ -170,9 +184,17 @@ void loop()
         {
             if (plaintext[current_position + OBIS_TYPE_OFFSET] != DATA_OCTET_STRING)
             {
-                Serial.println("Unsupported OBIS header type!");
-                receive_buffer_index = 0;
-                return;
+                // For Sagemcom the Meter Number is bugged, so skip the garbage...
+                if (current_position >= 229)
+                {
+                    break;
+                }
+                else
+                {
+                    Serial.print("Unsupported OBIS header type!");
+                    receive_buffer_index = 0;
+                    return;
+                }
             }
 
             uint8_t data_length = plaintext[current_position + OBIS_LENGTH_OFFSET];
@@ -228,6 +250,12 @@ void loop()
                 {
                     uint8_t meterNumber[data_length];
                     memcpy(&meterNumber[0], &plaintext[current_position + 2], data_length);
+
+                    Serial.print("Meter Number: ");
+                    for (int i = 0; i < data_length; i++)
+                    {
+                        Serial.printf("%02X", meterNumber[i]);
+                    }
 
                     // THIS IS THE END OF THE PACKET
                     break;
@@ -343,7 +371,7 @@ void loop()
                     break;
 
                 case TYPE_ACTIVE_ENERGY_PLUS:
-                    meter_data.energy_plus = float_value;
+                    meter_data.energy_plus = float_value + ACTIVE_ENERGY_PLUS_OFFSET;
                     Serial.print("ActiveEnergyPlus ");
                     Serial.println(float_value);
                     break;

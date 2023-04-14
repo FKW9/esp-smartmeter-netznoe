@@ -178,7 +178,10 @@ void ICACHE_RAM_ATTR buttonNextPressed()
 		}
 		else
 		{
+			display_on = 1;
+			digitalWrite(TFT_BL, TFT_BACKLIGHT_ON);
 			current_screen = 0;
+			displayUpdate(true);
 		}
 
 		if (current_screen >= screens)
@@ -194,11 +197,6 @@ void displayInactiveTimer()
 	{
 		display_on = 0;
 		digitalWrite(TFT_BL, !TFT_BACKLIGHT_ON);
-	}
-	else if (digitalRead(TFT_BL) != TFT_BACKLIGHT_ON)
-	{
-		display_on = 1;
-		digitalWrite(TFT_BL, TFT_BACKLIGHT_ON);
 	}
 }
 

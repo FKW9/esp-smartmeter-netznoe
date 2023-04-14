@@ -9,6 +9,11 @@
 // Also disables the Fileserver
 #define SD_CARD_LOGGING
 
+// If you get a new Smartmeter, the overall energy counter gets reset.
+// Input your latest measurement here to add it to the new values.
+// Unit = Wh
+#define ACTIVE_ENERGY_PLUS_OFFSET 9520525
+
 // Comment out next line to disable Graphite logging
 #define USE_GRAPHITE
 
