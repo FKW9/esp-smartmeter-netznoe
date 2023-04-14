@@ -10,7 +10,7 @@ Musste mich gegen ein DIN-Hutschienengehäuse entscheiden, da in meinem Schaltsc
 
 ## Unterstützte Smartmeter
 - Kaifa MA309M
-- Sagecom T210-D (getestet von [SebTrax](https://github.com/SebTrax))
+- Sagecom T210-D
 
 ## Features
 - Lest alle verfügbaren OBIS Daten von der Kundenschnittstelle P1 aus
