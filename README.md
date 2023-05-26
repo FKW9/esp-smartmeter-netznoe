@@ -78,7 +78,6 @@ Diese beinhaltet folgende Kern-Komponenten:
 - Zwei Taster für die Menüführung
 
 Schaltplan, BOM, Anmerkungen, Zukünftige Verbesserungen der PCB usw. befinden sich im Ordner [hardware](/hardware/).
->Ich habe noch drei PCB's übrig und Bauteile um 1-2 zu bestücken (außer M-Bus Komponenten!). Falls Interresse besteht, einfach bei mir melden.
 
 Für einen "simplen" Aufbau wird folgendes benötigt:
 - [M-Bus Slave Click](https://www.mikroe.com/m-bus-slave-click) Board (oder Kompatible)

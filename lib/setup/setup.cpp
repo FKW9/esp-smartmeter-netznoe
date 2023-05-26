@@ -7,8 +7,9 @@ void startConfigAP(bool force)
     wm.setClass("invert");
     wm.setShowStaticFields(true);
     wm.setShowInfoErase(true);
-    wm.setConnectTimeout(30);
-    wm.setConnectRetries(10);
+
+    wm.setConnectTimeout(180);
+    wm.setConnectRetries(255);
     // wm.setShowDnsFields(true);
 
     if (wm.getWiFiIsSaved() && !force)
@@ -26,6 +27,7 @@ void startConfigAP(bool force)
 
     if (force)
     {
+        etft.print("Bitte mit WiFi \"");
         Serial.println("Starting config portal");
         wm.setConfigPortalTimeout(120);
         if (!wm.startConfigPortal(HOSTNAME))
@@ -58,7 +60,7 @@ void setupWiFi()
     WiFi.setSleep(false);
     WiFi.mode(WIFI_STA);
 
-    startConfigAP();
+    startConfigAP(false);
 
     if (!MDNS.begin(HOSTNAME))
     {
