@@ -605,6 +605,7 @@ void serial_dump()
     {
         Serial.println("Spiffs: Not found");
     }
+#ifdef SD_CARD_LOGGING
     if (sd_available)
     {
         uint64_t cardSize = SD_MMC.cardSize() / (1024 * 1024);
@@ -616,6 +617,7 @@ void serial_dump()
     {
         Serial.println("SD Card: Not available");
     }
+#endif
     return;
 }
 
