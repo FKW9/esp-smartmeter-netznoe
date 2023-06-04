@@ -37,9 +37,11 @@
     #define GRAPHITE_RSSI 					"smartmeter.data.rssi"
     #define GRAPHITE_T 					    "smartmeter.data.pcb_t"
     #define GRAPHITE_RH 					"smartmeter.data.pcb_rh"
+    #define GRAPHITE_SEND_TIME              "smartmeter.data.send_time"     // how long it takes to send all packets to the host
+    #define GRAPHITE_PROC_TIME              "smartmeter.data.process_time"  // how long it took to get and decode all data
 #endif
 
-void submitToGraphite(time_t unix_timestamp, String metrics, float value);
+void submitToGraphite(String metrics, float value, time_t unix_timestamp = -1);
 
 #endif
 #endif

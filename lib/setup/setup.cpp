@@ -55,9 +55,6 @@ void startConfigAP(bool force)
  */
 void setupWiFi()
 {
-    // Disable power saving on WiFi to improve responsiveness
-    // (https://github.com/espressif/arduino-esp32/issues/1484)
-    WiFi.setSleep(false);
     WiFi.mode(WIFI_STA);
 
     startConfigAP(false);
@@ -70,6 +67,11 @@ void setupWiFi()
         delay(2000);
         ESP.restart();
     }
+
+    // Disable power saving on WiFi to improve responsiveness
+    // (https://github.com/espressif/arduino-esp32/issues/1484)
+	WiFi.setSleep(false);
+	WiFi.setTxPower(WIFI_POWER_19_5dBm);
 
     ArduinoOTA.setHostname(HOSTNAME);
     ArduinoOTA.begin();

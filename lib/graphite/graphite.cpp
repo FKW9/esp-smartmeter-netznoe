@@ -12,16 +12,15 @@ WiFiClient graphiteClient;
  * @param metrics
  * @param value
  */
-void submitToGraphite(time_t unix_timestamp, String metrics, float value)
+void submitToGraphite(String metrics, float value, time_t unix_timestamp)
 {
+	String payload = metrics + " " + value + " " + unix_timestamp + "\n";
+
 	if (!graphiteClient.connect(GRAPHITE_HOST, GRAPHITE_PORT))
 	{
 		Serial.print("Sending data to graphite failed!");
-		delay(200);
 		return;
 	}
-
-	String payload = metrics + " " + value + " " + unix_timestamp + "\n";
 
 	graphiteClient.print(payload);
 	graphiteClient.stop();

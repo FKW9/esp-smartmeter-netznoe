@@ -7,6 +7,7 @@
 #include "ESPLogger.h"
 #include "setup.h"
 #include "../key.h"
+#include "time.h"
 
 #ifdef USE_GRAPHITE
 #include "graphite.h"
@@ -26,6 +27,9 @@ mbedtls_gcm_context aes;
 float temperature = 0, humidity = 0;
 uint8_t rht_ready = 0;
 
+const char *ntpServer = "at.pool.ntp.org";
+unsigned long epochTime;
+
 // Variables for Logging
 #ifdef SD_CARD_LOGGING
 #include "fileserver.h"
@@ -37,6 +41,7 @@ uint8_t sd_available = 0;
 uint32_t swap_uint32(uint32_t val);
 uint16_t swap_uint16(uint16_t val);
 void serial_dump();
+unsigned long getTime();
 
 // SETUP
 void setup()
@@ -54,6 +59,7 @@ void setup()
     Serial2.setTimeout(2);
 
     setupWiFi();
+    configTime(0, 0, ntpServer);
 #ifdef SD_CARD_LOGGING
     sd_available = setupSDCard();
     displaySDCardStatus();
@@ -141,6 +147,9 @@ void loop()
 		 * @TODO: ADD ROUTINE TO DETERMINE PAYLOAD LENGTHS AUTOMATICALLY
 		 */
 
+        // used as receive time
+        epochTime = getTime();
+
         uint16_t payload_length = 243;
         uint16_t payload_length_msg1 = 228;
         uint16_t payload_length_msg2 = payload_length - payload_length_msg1;
@@ -179,6 +188,12 @@ void loop()
         // Decode data
         uint16_t current_position = DECODER_START_OFFSET;
         meterData meter_data;
+
+        // Use epoch time (UTC) as timestamp for the meter data,
+        // so that every metric has the same timestamp.
+        // With using -1 there is a small time shift, hence post processing
+        // will be annoying.
+        meter_data.timestamp_unix = epochTime;
 
         do
         {
@@ -219,10 +234,9 @@ void loop()
 
                     sprintf(meter_data.timestamp_str, "%02u.%02u.%04u %02u:%02u:%02u", day, month, year, hour, minute, second);
 
-                    meter_data.timestamp_unix = -1;
+                    // meter_data.timestamp_unix = -1;
 
                     // COMMENTED OUT BECAUSE I DONT WANT THE PAIN CONVERSION WITH TIMEZONZES
-                    // JUST USE -1 TO USE TIME OF ARRIVAL ON GRAPHITE HOST
                     //
                     // convert to unix timestamp for graphite
                     // struct tm tm;
@@ -485,20 +499,23 @@ void loop()
 
         // send the data
 #ifdef USE_GRAPHITE
-        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_VOLTAGE_L1, meter_data.voltage_l1);
-        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_VOLTAGE_L2, meter_data.voltage_l2);
-        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_VOLTAGE_L3, meter_data.voltage_l3);
-        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_CURRENT_L1, meter_data.current_l1);
-        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_CURRENT_L2, meter_data.current_l2);
-        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_CURRENT_L3, meter_data.current_l3);
-        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_POWER_FACTOR, meter_data.cos_phi);
-        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_ACTIVE_POWER_PLUS, meter_data.power_plus);
-        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_ACTIVE_POWER_MINUS, meter_data.power_minus);
-        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_ACTIVE_ENERGY_PLUS, meter_data.energy_plus);
-        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_ACTIVE_ENERGY_MINUS, meter_data.energy_minus);
-        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_T, meter_data.temperature);
-        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_RH, meter_data.humidity);
-        submitToGraphite(meter_data.timestamp_unix, GRAPHITE_RSSI, meter_data.rssi);
+        uint32_t start_send_t = millis();
+        submitToGraphite(GRAPHITE_CURRENT_L1, meter_data.current_l1, meter_data.timestamp_unix);
+        submitToGraphite(GRAPHITE_CURRENT_L2, meter_data.current_l2, meter_data.timestamp_unix);
+        submitToGraphite(GRAPHITE_CURRENT_L3, meter_data.current_l3, meter_data.timestamp_unix);
+        submitToGraphite(GRAPHITE_ACTIVE_POWER_PLUS, meter_data.power_plus, meter_data.timestamp_unix);
+        submitToGraphite(GRAPHITE_ACTIVE_ENERGY_PLUS, meter_data.energy_plus, meter_data.timestamp_unix);
+        submitToGraphite(GRAPHITE_POWER_FACTOR, meter_data.cos_phi, meter_data.timestamp_unix);
+        submitToGraphite(GRAPHITE_RSSI, meter_data.rssi, meter_data.timestamp_unix);
+        submitToGraphite(GRAPHITE_T, meter_data.temperature, meter_data.timestamp_unix);
+        submitToGraphite(GRAPHITE_RH, meter_data.humidity, meter_data.timestamp_unix);
+        submitToGraphite(GRAPHITE_VOLTAGE_L1, meter_data.voltage_l1, meter_data.timestamp_unix);
+        submitToGraphite(GRAPHITE_VOLTAGE_L2, meter_data.voltage_l2, meter_data.timestamp_unix);
+        submitToGraphite(GRAPHITE_VOLTAGE_L3, meter_data.voltage_l3, meter_data.timestamp_unix);
+        submitToGraphite(GRAPHITE_ACTIVE_POWER_MINUS, meter_data.power_minus, meter_data.timestamp_unix);
+        submitToGraphite(GRAPHITE_ACTIVE_ENERGY_MINUS, meter_data.energy_minus, meter_data.timestamp_unix);
+        submitToGraphite(GRAPHITE_SEND_TIME, (float)(millis() - start_send_t), meter_data.timestamp_unix);
+        submitToGraphite(GRAPHITE_PROC_TIME, (float)(start_send_t - current_time), meter_data.timestamp_unix);
 #endif
 
         // update the display
@@ -547,16 +564,13 @@ void loop()
             sprintf(record, "%s;%s", meter_data.timestamp_str, _tmp.c_str());
 
             bool success = logger.append(record);
-            if (success)
-            {
-                Serial.println("Record stored on SD Card!");
-            }
-            else
+            if (!success)
             {
                 if (logger.isFull())
                     Serial.println("Record NOT stored! File reached max size!");
                 else
                     Serial.println("Something went wrong, record NOT stored!");
+                Serial.println("Record stored on SD Card!");
             }
         }
         else
@@ -630,4 +644,17 @@ uint32_t swap_uint32(uint32_t val)
 {
     val = ((val << 8) & 0xFF00FF00) | ((val >> 8) & 0xFF00FF);
     return (val << 16) | (val >> 16);
+}
+
+// Function that gets current epoch time
+unsigned long getTime()
+{
+    time_t now;
+    struct tm timeinfo;
+    if (!getLocalTime(&timeinfo))
+    {
+        return (-1);
+    }
+    time(&now);
+    return now;
 }
