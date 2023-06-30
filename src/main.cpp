@@ -4,14 +4,10 @@
 #include "obis.h"
 #include "display.h"
 #include "hte501.h"
-#include "ESPLogger.h"
 #include "setup.h"
 #include "../key.h"
 #include "time.h"
-
-#ifdef USE_GRAPHITE
 #include "graphite.h"
-#endif
 
 #ifdef TEST_SETUP
 #include <random>
@@ -29,13 +25,6 @@ uint8_t rht_ready = 0;
 
 const char *ntpServer = "at.pool.ntp.org";
 unsigned long epochTime;
-
-// Variables for Logging
-#ifdef SD_CARD_LOGGING
-#include "fileserver.h"
-#include "sdcard.h"
-uint8_t sd_available = 0;
-#endif
 
 // Function prototypes
 uint32_t swap_uint32(uint32_t val);
@@ -58,15 +47,12 @@ void setup()
     Serial2.setRxBufferSize(RECEIVE_BUFFER_SIZE);
     Serial2.setTimeout(2);
 
-    setupWiFi();
+    if (!startWiFi())
+        ESP.restart();
     configTime(0, 0, ntpServer);
-#ifdef SD_CARD_LOGGING
-    sd_available = setupSDCard();
-    displaySDCardStatus();
-    setupFileserver();
-#endif
+
     etft.printf("\nWarte auf Smartmeter Daten...");
-    delay(2000);
+    delay(1000);
 }
 
 // MAIN LOOP
@@ -75,19 +61,6 @@ void loop()
     checkWiFiConnection();
     displayInactiveTimer();
     displayUpdate();
-
-    if (config_update)
-    {
-        config_update = false;
-// blocking
-#ifdef SD_CARD_LOGGING
-        stopFileserver();
-        startConfigAP(true);
-        setupFileserver();
-#else
-        startConfigAP(true);
-#endif
-    }
 
     uint32_t current_time = millis();
 
@@ -233,26 +206,6 @@ void loop()
                     second = plaintext[current_position + 9];
 
                     sprintf(meter_data.timestamp_str, "%02u.%02u.%04u %02u:%02u:%02u", day, month, year, hour, minute, second);
-
-                    // meter_data.timestamp_unix = -1;
-
-                    // COMMENTED OUT BECAUSE I DONT WANT THE PAIN CONVERSION WITH TIMEZONZES
-                    //
-                    // convert to unix timestamp for graphite
-                    // struct tm tm;
-                    // if (strptime(meter_data.timestamp_str, "%d.%m.%Y %H:%M:%S", &tm) != NULL)
-                    // {
-                    //// TODO: detect time zone summer time/winter time
-                    //     meter_data.timestamp_unix = mktime(&tm) - 7200;
-                    //     Serial.print("Unix Time: ");
-                    //     Serial.println(meter_data.timestamp_unix);
-                    // }
-                    // else
-                    // {
-                    //     Serial.println("Invalid Timestamp");
-                    //     receive_buffer_index = 0;
-                    //     return;
-                    // }
 
                     Serial.print("Timestamp: ");
                     Serial.println(meter_data.timestamp_str);
@@ -498,7 +451,6 @@ void loop()
         }
 
         // send the data
-#ifdef USE_GRAPHITE
         uint32_t start_send_t = millis();
         submitToGraphite(GRAPHITE_CURRENT_L1, meter_data.current_l1, meter_data.timestamp_unix);
         submitToGraphite(GRAPHITE_CURRENT_L2, meter_data.current_l2, meter_data.timestamp_unix);
@@ -516,68 +468,10 @@ void loop()
         submitToGraphite(GRAPHITE_ACTIVE_ENERGY_MINUS, meter_data.energy_minus, meter_data.timestamp_unix);
         submitToGraphite(GRAPHITE_SEND_TIME, (float)(millis() - start_send_t), meter_data.timestamp_unix);
         submitToGraphite(GRAPHITE_PROC_TIME, (float)(start_send_t - current_time), meter_data.timestamp_unix);
-#endif
 
         // update the display
         displayMeterData(&meter_data);
 
-// log to file
-#ifdef SD_CARD_LOGGING
-        if (sd_available)
-        {
-            // check for free space, if smaller than 100MB, delete old files
-            while ((SD_MMC.totalBytes() - SD_MMC.usedBytes()) < 100e6)
-            {
-                char oldest_file[32];
-                getOldestFile(oldest_file, "/");
-                Serial.print("Less than 100MB left. Deleting File: ");
-                Serial.println(oldest_file);
-                deleteFile(oldest_file);
-            }
-
-            // copy timestamp into file string
-            // creates new file every month
-            char filename[13] = {"/YYYY_MM.CSV"};
-            memcpy(&filename[6], &meter_data.timestamp_str[3], 2);
-            memcpy(&filename[1], &meter_data.timestamp_str[6], 4);
-
-#ifdef TEST_SETUP
-            sprintf(filename, "/%d_%02d.CSV", random(2021, 2026), random(1, 12));
-#endif
-
-            // init logger
-            ESPLogger logger(filename, SD_MMC);
-            logger.setSizeLimit(80000000); //80MB max size, 1 month is about 56MB
-            logger.setChunkSize(128);
-
-            // write header if file was just created (=empty)
-            if (logger.getSize() < 5)
-            {
-                Serial.println("Writing Header to new file");
-                logger.append("DATUM_ZEIT;U_L1;U_L2;U_L3;I_L1;I_L2;I_L3;COS(PHI);P_ZU;P_AB;E_ZU;E_AB;T;RH;RSSI");
-            }
-
-            char record[128];
-            sprintf(record, "%.1f;%.1f;%.1f;%.2f;%.2f;%.2f;%.3f;%.1f;%.1f;%.0f;%.0f;%.2f;%.2f;%d", meter_data.voltage_l1, meter_data.voltage_l2, meter_data.voltage_l3, meter_data.current_l1, meter_data.current_l2, meter_data.current_l3, meter_data.cos_phi, meter_data.power_plus, meter_data.power_minus, meter_data.energy_plus, meter_data.energy_minus, meter_data.temperature, meter_data.humidity, meter_data.rssi);
-            String _tmp = String(record);
-            _tmp.replace(".", ",");
-            sprintf(record, "%s;%s", meter_data.timestamp_str, _tmp.c_str());
-
-            bool success = logger.append(record);
-            if (!success)
-            {
-                if (logger.isFull())
-                    Serial.println("Record NOT stored! File reached max size!");
-                else
-                    Serial.println("Something went wrong, record NOT stored!");
-                Serial.println("Record stored on SD Card!");
-            }
-        }
-        else
-        {
-            Serial.println("Data not stored. SD Card not available.");
-        }
-#endif
     }
 }
 
@@ -619,19 +513,6 @@ void serial_dump()
     {
         Serial.println("Spiffs: Not found");
     }
-#ifdef SD_CARD_LOGGING
-    if (sd_available)
-    {
-        uint64_t cardSize = SD_MMC.cardSize() / (1024 * 1024);
-        Serial.printf("Card Size: %lluMB\n", cardSize);
-        Serial.printf("Total space: %lluMB\n", SD_MMC.totalBytes() / (1024 * 1024));
-        Serial.printf("Used space: %lluMB\n", SD_MMC.usedBytes() / (1024 * 1024));
-    }
-    else
-    {
-        Serial.println("SD Card: Not available");
-    }
-#endif
     return;
 }
 

@@ -1,7 +1,5 @@
 #include "graphite.h"
 
-#ifdef USE_GRAPHITE
-
 // Graphite Client
 WiFiClient graphiteClient;
 
@@ -25,5 +23,3 @@ void submitToGraphite(String metrics, float value, time_t unix_timestamp)
 	graphiteClient.print(payload);
 	graphiteClient.stop();
 }
-
-#endif

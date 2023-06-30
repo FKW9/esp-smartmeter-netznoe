@@ -34,18 +34,9 @@ void displaySetup()
 
 void displaySDCardStatus()
 {
-	uint64_t s = getFreeSDSpace();
-	if (s == 0)
-	{
-		etft.setTextColor(TFT_RED);
-		etft.println("Keine SD Karte gefunden!");
-		etft.setTextColor(TFT_WHITE);
-	}
-	else
-	{
-		etft.printf("SD Karte: ");
-		etft.printf("%lluMB frei\n", s);
-	}
+	etft.setTextColor(TFT_RED);
+	etft.println("SD CARD DISABLED");
+	etft.setTextColor(TFT_WHITE);
 }
 
 void displayWiFiInfo()

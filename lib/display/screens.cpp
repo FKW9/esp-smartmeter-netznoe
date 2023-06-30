@@ -343,17 +343,7 @@ void Screen6()
 	int up_sec = sec % 60;
 
 	etft.printf("Up Time: %" PRId64 ":%02i:%02i:%02i (d:h:m:s)\r\n", up_days, up_hours, up_min, up_sec);
-	if (SD_MMC.begin())
-	{
-		uint64_t cardSize = SD_MMC.cardSize() / (1024 * 1024);
-		etft.printf("Card Size: %lluMB\r\n", cardSize);
-		etft.printf("Total space: %lluMB\r\n", SD_MMC.totalBytes() / (1024 * 1024));
-		etft.printf("Used space: %lluMB\r\n", SD_MMC.usedBytes() / (1024 * 1024));
-	}
-	else
-	{
-		etft.println("SD Card: Not available\r\n");
-	}
+	etft.println("SD Card disabled\r\n");
 	etft.setTextColor(TFT_GREEN);
 	etft.setCursor(0, 120);
 	etft.print("Press NEXT to continue");
