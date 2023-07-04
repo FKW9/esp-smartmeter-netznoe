@@ -1,7 +1,7 @@
 #include "setup.h"
 
 /**
- * @brief Connect to WiFi, start MDN Service, init OTA
+ * @brief Connect to WiFi, init OTA
  */
 uint8_t startWiFi()
 {
