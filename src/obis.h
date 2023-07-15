@@ -27,6 +27,8 @@
 #define TYPE_ACTIVE_POWER_MINUS     9
 #define TYPE_ACTIVE_ENERGY_PLUS     10
 #define TYPE_ACTIVE_ENERGY_MINUS    11
+#define TYPE_REACTIVE_POWER_PLUS    12
+#define TYPE_REACTIVE_POWER_MINUS   13
 
 // Data structure
 #define DECODER_START_OFFSET 20 // Offset for start of OBIS decoding
@@ -43,6 +45,18 @@
 #define OBIS_E 4
 #define OBIS_F 5
 
+// Timestamp
+static uint8_t OBIS_TIMESTAMP[] {
+    0x01, 0x00 // 0.0.1.0.0.255
+};
+// Meter Number
+static const uint8_t OBIS_SERIAL_NUMBER[] {
+    0x60, 0x01 // 0.0.96.1.0.255
+};
+// Device Name
+static const uint8_t OBIS_DEVICE_NAME[] {
+    0x2A, 0x00 // 0.0.42.0.0.255
+};
 // cos(phi)
 static const uint8_t OBIS_POWER_FACTOR[] {
     0x0D, 0x07 // 1.0.13.7.0.255
@@ -81,6 +95,13 @@ static const uint8_t OBIS_ACTIVE_ENERGY_PLUS[] {
 static const uint8_t OBIS_ACTIVE_ENERGY_MINUS[] {
     0x02, 0x08 // 1.0.2.8.0.255
 };
+// Blindleistung
+static const uint8_t OBIS_REACTIVE_POWER_PLUS[] {
+    0x03, 0x08 // 1.0.3.8.0.255
+};
+static const uint8_t OBIS_REACTIVE_POWER_MINUS[] {
+    0x04, 0x08 // 1.0.4.8.0.255
+};
 
 typedef struct MeterData {
     char timestamp_str[21];
@@ -96,6 +117,8 @@ typedef struct MeterData {
     float power_minus;
     float energy_plus;
     float energy_minus;
+    float reactive_power_plus;
+    float reactive_power_minus;
     float temperature;
     float humidity;
     int8_t rssi;

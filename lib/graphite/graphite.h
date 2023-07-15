@@ -10,6 +10,8 @@
 #ifdef TEST_SETUP
     #define GRAPHITE_ACTIVE_POWER_PLUS 		"test.smartmeter.momentanleistung.plus"
     #define GRAPHITE_ACTIVE_POWER_MINUS 	"test.smartmeter.momentanleistung.minus"
+    #define GRAPHITE_REACTIVE_POWER_PLUS 	"test.smartmeter.blindleistung.plus"
+    #define GRAPHITE_REACTIVE_POWER_MINUS 	"test.smartmeter.blindleistung.minus"
     #define GRAPHITE_ACTIVE_ENERGY_PLUS 	"test.smartmeter.wirkenergie.plus"
     #define GRAPHITE_ACTIVE_ENERGY_MINUS 	"test.smartmeter.wirkenergie.minus"
     #define GRAPHITE_VOLTAGE_L1 			"test.smartmeter.spannung.L1"
@@ -22,9 +24,13 @@
     #define GRAPHITE_RSSI 					"test.smartmeter.data.rssi"
     #define GRAPHITE_T 					    "test.smartmeter.data.pcb_t"
     #define GRAPHITE_RH 					"test.smartmeter.data.pcb_rh"
+    #define GRAPHITE_SEND_TIME              "test.smartmeter.data.send_time"     // how long it takes to send all packets to the host
+    #define GRAPHITE_PROC_TIME              "test.smartmeter.data.process_time"  // how long it took to get and decode all data
 #else
     #define GRAPHITE_ACTIVE_POWER_PLUS 		"smartmeter.momentanleistung.plus"
     #define GRAPHITE_ACTIVE_POWER_MINUS 	"smartmeter.momentanleistung.minus"
+    #define GRAPHITE_REACTIVE_POWER_PLUS 	"smartmeter.blindleistung.plus"
+    #define GRAPHITE_REACTIVE_POWER_MINUS 	"smartmeter.blindleistung.minus"
     #define GRAPHITE_ACTIVE_ENERGY_PLUS 	"smartmeter.wirkenergie.plus"
     #define GRAPHITE_ACTIVE_ENERGY_MINUS 	"smartmeter.wirkenergie.minus"
     #define GRAPHITE_VOLTAGE_L1 			"smartmeter.spannung.L1"

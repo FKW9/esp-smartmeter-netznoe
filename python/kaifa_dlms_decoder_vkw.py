@@ -21,14 +21,14 @@ if __name__ == '__main__':
 
     splitinfo = DATA[6]         # wenn hier 00, dann gibts noch eine Nachricht
     systitle  = DATA[11:19]     # hier steht der SysTitle
-    print('System Title: ' + systitle.hex())
+    print('System Title: ' + systitle.hex().upper())
     ic = DATA[23:27]            # hier steht der invectation counter
     iv = systitle + ic          # iv ist 12 Bytes
-    print('Initialisierungsvektor: ' + iv.hex() + '\nLänge:', len(iv), H_SEP)
+    print('Initialisierungsvektor: ' + iv.hex().upper() + '\nLänge:', len(iv), H_SEP)
 
     msg1 = DATA[HEADER_POS_1 : (6 + msglen1-2)]
     # msg1 = DATA[26:msglen1]
-    print('Frame 1 ['+ str(len(msg1)) + ']: ' + msg1.hex() + H_SEP)
+    print('Frame 1 ['+ str(len(msg1)) + ']: ' + msg1.hex().upper() + H_SEP)
 
     msglen2 = int(hex(DATA[msglen1 + 7]), 16)
     print(msglen2)
@@ -36,12 +36,12 @@ if __name__ == '__main__':
 
     msg2 = DATA[msglen1 + 6 + HEADER_POS_2 : (msglen1 + 5 + 5 + msglen2)]
     # msg2 = DATA[256+9:msglen2]
-    print('Frame 2 ['+ str(len(msg2)) + ']: ' + msg2.hex() + H_SEP)
+    print('Frame 2 ['+ str(len(msg2)) + ']: ' + msg2.hex().upper() + H_SEP)
 
     cyphertext = msg1  +  msg2
-    print('Cyphertext:\n' + cyphertext.hex() + H_SEP)
+    print('Cyphertext:\n' + cyphertext.hex().upper() + H_SEP)
 
-    cyphertext_bytes = bytes.fromhex(cyphertext.hex())
+    cyphertext_bytes = bytes.fromhex(cyphertext.hex().upper())
     cipher           = AES.new(KEY, AES.MODE_GCM, nonce=iv)
     decrypted        = cipher.decrypt(cyphertext_bytes)
 
