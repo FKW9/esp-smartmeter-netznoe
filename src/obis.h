@@ -29,6 +29,7 @@
 #define TYPE_ACTIVE_ENERGY_MINUS    11
 #define TYPE_REACTIVE_POWER_PLUS    12
 #define TYPE_REACTIVE_POWER_MINUS   13
+#define TYPE_TIMESTAMP              14
 
 // Data structure
 #define DECODER_START_OFFSET 20 // Offset for start of OBIS decoding

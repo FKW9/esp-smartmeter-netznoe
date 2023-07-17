@@ -38,6 +38,7 @@ uint8_t sd_available = 0;
 #endif
 
 // Function prototypes
+int16_t get_signed_short(uint8_t msb, uint8_t lsb);
 uint32_t swap_uint32(uint32_t val);
 uint16_t swap_uint16(uint16_t val);
 void serial_dump();
@@ -198,12 +199,12 @@ void loop()
             memcpy(&obis_code[0], &plaintext[current_position + OBIS_CODE_OFFSET], data_length); // Copy OBIS code to array
 
 #ifdef DEBUG_OUTPUT
-        Serial.println("Found OBIS code:");
-        for (int i = 0; i < data_length; i++)
-        {
-            Serial.printf("%02X", obis_code[i]);
-        }
-        Serial.println();
+            Serial.print("Found OBIS code: ");
+            for (int i = 0; i < data_length; i++)
+            {
+                Serial.printf("%02X", obis_code[i]);
+            }
+            Serial.println();
 #endif
             current_position += data_length + 2; // Advance past code, position and type
 
@@ -280,8 +281,11 @@ void loop()
             }
             else if (obis_code[OBIS_A] == 0x00)
             {
+                if (memcmp(&obis_code[OBIS_C], OBIS_TIMESTAMP, 2) == 0)
+                {
+                    code_type = TYPE_TIMESTAMP;
+                }
                 // check for the following:
-                // 0.0.1.0.0.255   Timestamp
                 // 0.0.96.1.0.255  Zaehlernummer
                 // 0.0.42.0.0.255  COSEM logical device name
             }
@@ -411,6 +415,44 @@ void loop()
             case DATA_OCTET_STRING:
                 obis_data_length = plaintext[current_position];
                 current_position++; // Advance past string length
+
+                switch (code_type)
+                {
+                case TYPE_TIMESTAMP:
+                    uint16_t year;
+                    uint8_t month, day, hour, minute, second;
+                    int16_t utc_offset;
+
+                    year = (plaintext[current_position] << 8) + plaintext[current_position + 1];
+                    month = plaintext[current_position + 2];
+                    day = plaintext[current_position + 3];
+                    hour = plaintext[current_position + 5];
+                    minute = plaintext[current_position + 6];
+                    second = plaintext[current_position + 7];
+
+                    sprintf(meter_data.timestamp_str, "%02u.%02u.%04u %02u:%02u:%02u", day, month, year, hour, minute, second);
+
+                    // get utc offset in seconds
+                    utc_offset = get_signed_short(plaintext[current_position + 9], plaintext[current_position + 10]) * 60 * -1;
+
+                    // convert to unix timestamp
+                    struct tm tm;
+                    if (strptime(meter_data.timestamp_str, "%d.%m.%Y %H:%M:%S", &tm) != NULL)
+                    {
+                        meter_data.timestamp_unix = mktime(&tm) - utc_offset;
+                        Serial.print("Unix Time ");
+                        Serial.println(meter_data.timestamp_unix);
+                    }
+                    else
+                    {
+                        Serial.println("Invalid Timestamp");
+                    }
+
+                    Serial.print("Timestamp ");
+                    Serial.print(meter_data.timestamp_str);
+                    Serial.printf(" UTC %+03d:00\r\n", utc_offset / 3600);
+                    break;
+                }
                 break;
 
             default:
@@ -583,6 +625,15 @@ void serial_dump()
     }
 #endif
     return;
+}
+
+int16_t get_signed_short(uint8_t msb, uint8_t lsb)
+{
+    // byteorder = big
+    int16_t _msb = msb;
+    if (_msb >= 128)
+        _msb -= 256;
+    return _msb * 256 + lsb;
 }
 
 uint16_t swap_uint16(uint16_t val)
