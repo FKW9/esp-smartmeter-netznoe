@@ -12,10 +12,6 @@ Musste mich gegen ein DIN-Hutschienengehäuse entscheiden, da in meinem Schaltsc
 - Kaifa MA309M
 - Sagecom T210-D
 
-## Unterstützte (bekannte) Netzbetreiber
-- Netz Niederösterreich
-- VKW (in Entwicklung, siehe Branch [vkw-test](https://github.com/FKW9/esp-smartmeter-netznoe/tree/vkw-test) und [Issue #10](https://github.com/FKW9/esp-smartmeter-netznoe/issues/10)
-
 ## Features
 - Lest alle verfügbaren OBIS Daten von der Kundenschnittstelle P1 aus
 - Speichert alle Daten auf einer SD-Karte im CSV Format ab
